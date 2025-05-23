@@ -1,373 +1,317 @@
 
 import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Send, Edit, Download, Users, Plus, FileCheck, Clock } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Send, Download, Edit, CheckCircle, Clock, Users } from 'lucide-react';
 import { useVoice } from '@/contexts/VoiceContext';
-import { useDocument } from '@/contexts/DocumentContext';
-import { VoiceAssistant } from '@/components/VoiceAssistant';
+import { useDocument, DocumentField } from '@/contexts/DocumentContext';
+import { PDFViewer } from '@/components/PDFViewer';
 import { SignaturePad } from '@/components/SignaturePad';
 import { TextFieldInput } from '@/components/TextFieldInput';
-import { PDFViewer } from '@/components/PDFViewer';
-import { toast } from '@/hooks/use-toast';
+import { VoiceAssistant } from '@/components/VoiceAssistant';
 
 const DocumentPreview = () => {
-  const navigate = useNavigate();
   const { documentId } = useParams();
+  const navigate = useNavigate();
   const { speak, stop } = useVoice();
-  const { documents, setCurrentDocument, updateDocument, updateField, addSigner } = useDocument();
-  
-  const [document, setDocument] = useState(documents.find(d => d.id === documentId));
-  const [isSigningMode, setIsSigningMode] = useState(false);
-  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
-  const [fieldInputType, setFieldInputType] = useState<'signature' | 'text' | 'date' | null>(null);
-  const [newSignerEmail, setNewSignerEmail] = useState('');
-  const [newSignerName, setNewSignerName] = useState('');
+  const { documents, updateDocument } = useDocument();
+  const [showSignaturePad, setShowSignaturePad] = useState(false);
+  const [showTextInput, setShowTextInput] = useState(false);
+  const [selectedField, setSelectedField] = useState<DocumentField | null>(null);
+  const [signingMode, setSigningMode] = useState(false);
+  const [currentFieldType, setCurrentFieldType] = useState<'signature' | 'text' | 'date' | 'checkbox'>('signature');
 
-  useEffect(() => {
-    const updatedDoc = documents.find(d => d.id === documentId);
-    if (updatedDoc) {
-      setDocument(updatedDoc);
-    }
-  }, [documents, documentId]);
+  const document = documents.find(doc => doc.id === documentId);
 
   useEffect(() => {
     stop();
     
-    if (!document) {
-      speak("Document not found. Let me take you back to the dashboard.", 'high');
-      setTimeout(() => navigate('/dashboard'), 2000);
-      return;
-    }
+    const timer = setTimeout(() => {
+      if (!document) {
+        speak("Document not found. Let me take you back to the dashboard.", 'high');
+        setTimeout(() => navigate('/dashboard'), 2000);
+        return;
+      }
 
-    setCurrentDocument(document);
-    
-    if (document.status === 'draft') {
-      speak(`Previewing "${document.title}". This document has ${document.fields.length} fields and ${document.signers.length} signers. You can add more signers, test the signing experience, or send it for signatures. What would you like to do?`, 'normal');
-    } else {
-      speak(`Viewing "${document.title}". This document is currently ${document.status}. You can review the signatures and download the completed document.`, 'normal');
-    }
+      if (signingMode) {
+        speak("You're now in signing mode. Click on any field to fill it out. I'll guide you through each step.", 'normal');
+      } else {
+        speak(`Viewing ${document.title}. This document has ${document.fields.length} fields and ${document.signers.length} signers. You can edit the document, send it for signing, or switch to signing mode to test the signing experience.`, 'normal');
+      }
+    }, 1000);
 
-    return () => stop();
-  }, [document, speak, stop, navigate, setCurrentDocument]);
-
-  const handleAddSigner = () => {
-    if (!newSignerEmail.trim() || !newSignerName.trim()) {
-      speak("Please enter both the signer's name and email address.", 'high');
-      return;
-    }
-
-    addSigner({
-      name: newSignerName,
-      email: newSignerEmail,
-      role: 'signer',
-      status: 'pending'
-    });
-
-    setNewSignerEmail('');
-    setNewSignerName('');
-    
-    speak(`${newSignerName} has been added as a signer. They'll receive the document at ${newSignerEmail} when you send it.`, 'normal');
-    
-    toast({
-      title: "Signer added",
-      description: `${newSignerName} has been added to the document`
-    });
-  };
-
-  const handleTestSigning = () => {
-    if (document?.fields.length === 0) {
-      speak("This document doesn't have any signature fields yet. You'll need to add some fields before testing the signing experience.", 'high');
-      return;
-    }
-
-    setIsSigningMode(true);
-    speak("Entering test signing mode. This is how your signers will experience the document. Click on any signature field to sign it, or fill in text fields as needed.", 'normal');
-  };
-
-  const handleFieldClick = (fieldId: string) => {
-    if (!isSigningMode) return;
-    
-    const field = document?.fields.find(f => f.id === fieldId);
-    if (!field) return;
-
-    setSelectedFieldId(fieldId);
-    setFieldInputType(field.type);
-    
-    if (field.type === 'signature') {
-      speak("Opening signature pad. Draw your signature and click 'Save' when you're done.", 'normal');
-    } else if (field.type === 'text') {
-      speak("Enter your text in the field and click 'Save' when finished.", 'normal');
-    } else if (field.type === 'date') {
-      speak("Select or enter a date for this field.", 'normal');
-    } else if (field.type === 'checkbox') {
-      // Toggle checkbox immediately
-      updateField(fieldId, { value: field.value ? '' : 'checked' });
-      speak(field.value ? "Checkbox unchecked." : "Checkbox checked.", 'normal');
-    }
-  };
-
-  const handleSendDocument = () => {
-    if (!document) return;
-
-    if (document.signers.length === 0) {
-      speak("You need to add at least one signer before sending the document. Use the 'Add Signer' section below.", 'high');
-      return;
-    }
-
-    updateDocument(document.id, { status: 'sent' });
-    speak("Document sent successfully! In a real DocuSign system, email notifications would be sent to all signers. For this demo, the document status has been updated to 'sent'.", 'high');
-    
-    toast({
-      title: "Document sent",
-      description: "All signers have been notified"
-    });
-  };
-
-  const handleDownload = () => {
-    if (!document) return;
-    
-    // Create a blob with document data
-    const docData = {
-      title: document.title,
-      fields: document.fields,
-      signers: document.signers,
-      status: document.status,
-      completedAt: document.completedAt
+    return () => {
+      clearTimeout(timer);
+      stop();
     };
-    
-    const blob = new Blob([JSON.stringify(docData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${document.title.replace(/[^a-z0-9]/gi, '_')}_completed.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    speak("Document downloaded successfully! In a real system, this would be a completed PDF with all signatures.", 'normal');
-    
-    toast({
-      title: "Document downloaded",
-      description: "Completed document saved to your device"
-    });
-  };
-
-  const getCompletionProgress = () => {
-    if (!document || document.fields.length === 0) return 0;
-    const completedFields = document.fields.filter(field => field.value && field.value.trim()).length;
-    return Math.round((completedFields / document.fields.length) * 100);
-  };
+  }, [speak, stop, document, signingMode, navigate]);
 
   if (!document) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Document not found</h2>
-          <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
-        </div>
+        <Card>
+          <CardContent className="p-8 text-center">
+            <h2 className="text-xl font-semibold mb-2">Document Not Found</h2>
+            <p className="text-gray-600 mb-4">The document you're looking for doesn't exist.</p>
+            <Button onClick={() => navigate('/dashboard')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
+  const handleFieldClick = (field: DocumentField) => {
+    if (!signingMode) return;
+
+    setSelectedField(field);
+    setCurrentFieldType(field.type as 'signature' | 'text' | 'date' | 'checkbox');
+
+    if (field.type === 'signature') {
+      speak("Let's add your signature here. Use your mouse or finger to sign in the signature pad.", 'high');
+      setShowSignaturePad(true);
+    } else if (field.type === 'text' || field.type === 'date') {
+      speak(`Please enter the ${field.type === 'date' ? 'date' : 'text'} for this field.`, 'normal');
+      setShowTextInput(true);
+    } else if (field.type === 'checkbox') {
+      const newValue = !field.value;
+      updateDocument(document.id, {
+        fields: document.fields.map(f => 
+          f.id === field.id ? { ...f, value: newValue } : f
+        )
+      });
+      speak(newValue ? "Checkbox checked!" : "Checkbox unchecked!", 'normal');
+    }
+  };
+
+  const handleSignatureSave = (signatureData: string) => {
+    if (selectedField) {
+      updateDocument(document.id, {
+        fields: document.fields.map(f => 
+          f.id === selectedField.id ? { ...f, value: signatureData } : f
+        )
+      });
+      speak("Signature saved successfully! Great job!", 'high');
+    }
+    setShowSignaturePad(false);
+    setSelectedField(null);
+  };
+
+  const handleTextSave = (value: string) => {
+    if (selectedField) {
+      updateDocument(document.id, {
+        fields: document.fields.map(f => 
+          f.id === selectedField.id ? { ...f, value } : f
+        )
+      });
+      speak("Text saved successfully!", 'normal');
+    }
+    setShowTextInput(false);
+    setSelectedField(null);
+  };
+
+  const handleCancel = () => {
+    setShowSignaturePad(false);
+    setShowTextInput(false);
+    setSelectedField(null);
+    speak("Operation cancelled. You can click on another field to continue.", 'normal');
+  };
+
+  const handleSendDocument = () => {
+    updateDocument(document.id, { 
+      status: 'sent',
+      updatedAt: new Date()
+    });
+    speak("Document sent for signing! The signers will receive an email with the signing link.", 'high');
+  };
+
+  const handleEditDocument = () => {
+    speak("Taking you to the document editor where you can modify fields and signers.", 'normal');
+    setTimeout(() => navigate(`/editor/${documentId}`), 1000);
+  };
+
+  const getCompletionPercentage = () => {
+    if (document.fields.length === 0) return 0;
+    const completedFields = document.fields.filter(field => field.value).length;
+    return Math.round((completedFields / document.fields.length) * 100);
+  };
+
+  const getStatusBadge = () => {
+    const statusConfig = {
+      draft: { label: 'Draft', variant: 'secondary' as const, icon: Edit },
+      sent: { label: 'Sent', variant: 'default' as const, icon: Clock },
+      completed: { label: 'Completed', variant: 'default' as const, icon: CheckCircle },
+      declined: { label: 'Declined', variant: 'destructive' as const, icon: Clock },
+    };
+    
+    const config = statusConfig[document.status];
+    const IconComponent = config.icon;
+    
+    return (
+      <Badge variant={config.variant} className="flex items-center gap-1">
+        <IconComponent className="h-3 w-3" />
+        {config.label}
+      </Badge>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => navigate('/dashboard')}
-            >
-              <ArrowLeft className="h-4 w-4" />
+            <Button variant="outline" onClick={() => navigate('/dashboard')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
             </Button>
             <div>
               <h1 className="text-2xl font-bold">{document.title}</h1>
-              <div className="flex items-center gap-2">
-                <Badge variant={document.status === 'completed' ? 'default' : 'secondary'}>
-                  {document.status}
-                </Badge>
+              <div className="flex items-center gap-2 mt-1">
+                {getStatusBadge()}
                 <span className="text-sm text-gray-600">
-                  {document.fields.length} fields • {document.signers.length} signers
+                  Last updated {document.updatedAt.toLocaleDateString()}
                 </span>
               </div>
             </div>
           </div>
-          
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate(`/editor/${document.id}`)}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
+            <Button variant="outline" onClick={() => setSigningMode(!signingMode)}>
+              {signingMode ? 'Exit Signing Mode' : 'Test Signing'}
             </Button>
-            {document.status === 'draft' && (
+            {!signingMode && (
               <>
-                <Button variant="outline" onClick={handleTestSigning}>
-                  Test Signing
+                <Button variant="outline" onClick={handleEditDocument}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
                 </Button>
-                <Button onClick={handleSendDocument}>
-                  <Send className="h-4 w-4 mr-2" />
-                  Send Document
-                </Button>
+                {document.status === 'draft' && (
+                  <Button onClick={handleSendDocument}>
+                    <Send className="h-4 w-4 mr-2" />
+                    Send for Signing
+                  </Button>
+                )}
               </>
-            )}
-            {(document.status === 'completed' || isSigningMode) && (
-              <Button onClick={handleDownload}>
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
             )}
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-12 gap-6">
-          {/* Document Preview */}
-          <div className="lg:col-span-8">
+        {/* Document Stats */}
+        <div className="grid md:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-blue-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Signers</p>
+                  <p className="text-lg font-semibold">{document.signers.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Edit className="h-4 w-4 text-green-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Fields</p>
+                  <p className="text-lg font-semibold">{document.fields.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div>
+                <p className="text-sm text-gray-600">Completion</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Progress value={getCompletionPercentage()} className="flex-1" />
+                  <span className="text-sm font-medium">{getCompletionPercentage()}%</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-purple-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Status</p>
+                  <p className="text-lg font-semibold capitalize">{document.status}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {signingMode && (
+          <Card className="mb-6 border-blue-200 bg-blue-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-blue-800">
+                <CheckCircle className="h-5 w-5" />
+                <span className="font-medium">Signing Mode Active</span>
+              </div>
+              <p className="text-blue-700 mt-1">Click on any field in the document to fill it out.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* PDF Viewer */}
+        <Card>
+          <CardContent className="p-0">
             <PDFViewer
               pdfData={document.content}
               fields={document.fields}
               onFieldClick={handleFieldClick}
-              isSigningMode={isSigningMode}
-              selectedFieldId={selectedFieldId}
+              signingMode={signingMode}
             />
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Progress */}
-            {isSigningMode && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileCheck className="h-5 w-5" />
-                    Completion Progress
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Progress value={getCompletionProgress()} className="mb-2" />
-                  <p className="text-sm text-gray-600">
-                    {getCompletionProgress()}% complete ({document.fields.filter(f => f.value).length} of {document.fields.length} fields)
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Signers */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Signers ({document.signers.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {document.signers.map((signer) => (
-                    <div key={signer.id} className="flex items-center justify-between p-2 border rounded">
-                      <div>
-                        <div className="font-medium text-sm">{signer.name}</div>
-                        <div className="text-xs text-gray-600">{signer.email}</div>
-                      </div>
-                      <Badge variant={signer.status === 'signed' ? 'default' : 'secondary'}>
-                        {signer.status}
-                      </Badge>
+        {/* Signers List */}
+        {document.signers.length > 0 && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Signers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {document.signers.map((signer) => (
+                  <div key={signer.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{signer.name}</p>
+                      <p className="text-sm text-gray-600">{signer.email}</p>
                     </div>
-                  ))}
-                  
-                  {document.status === 'draft' && (
-                    <div className="space-y-2 pt-2 border-t">
-                      <Input
-                        placeholder="Signer name"
-                        value={newSignerName}
-                        onChange={(e) => setNewSignerName(e.target.value)}
-                      />
-                      <Input
-                        placeholder="Signer email"
-                        type="email"
-                        value={newSignerEmail}
-                        onChange={(e) => setNewSignerEmail(e.target.value)}
-                      />
-                      <Button onClick={handleAddSigner} size="sm" className="w-full">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Signer
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Document Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Document Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Created:</span>
-                  <span>{document.createdAt.toLocaleDateString()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Last modified:</span>
-                  <span>{document.updatedAt.toLocaleDateString()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Status:</span>
-                  <Badge variant="outline">{document.status}</Badge>
-                </div>
-                {document.completedAt && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Completed:</span>
-                    <span>{document.completedAt.toLocaleDateString()}</span>
+                    <Badge variant="secondary">
+                      {signer.role}
+                    </Badge>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {/* Signature Modal */}
-      {selectedFieldId && fieldInputType === 'signature' && (
+      {/* Modals */}
+      {showSignaturePad && selectedField && (
         <SignaturePad
-          onSave={(signature) => {
-            updateField(selectedFieldId, { value: signature });
-            setSelectedFieldId(null);
-            setFieldInputType(null);
-            speak("Signature saved successfully! You can continue signing other fields or finish the document.", 'normal');
-          }}
-          onCancel={() => {
-            setSelectedFieldId(null);
-            setFieldInputType(null);
-          }}
+          onSave={handleSignatureSave}
+          onCancel={handleCancel}
         />
       )}
 
-      {/* Text/Date Input Modal */}
-      {selectedFieldId && (fieldInputType === 'text' || fieldInputType === 'date') && (
+      {showTextInput && selectedField && (
         <TextFieldInput
-          fieldType={fieldInputType}
-          currentValue={document.fields.find(f => f.id === selectedFieldId)?.value || ''}
-          onSave={(value) => {
-            updateField(selectedFieldId, { value });
-            setSelectedFieldId(null);
-            setFieldInputType(null);
-            speak(`${fieldInputType} field saved successfully!`, 'normal');
-          }}
-          onCancel={() => {
-            setSelectedFieldId(null);
-            setFieldInputType(null);
-          }}
+          fieldType={currentFieldType === 'date' ? 'date' : 'text'}
+          currentValue={selectedField.value as string || ''}
+          onSave={handleTextSave}
+          onCancel={handleCancel}
         />
       )}
       
