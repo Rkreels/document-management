@@ -1,11 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Plus, Upload, FileText, Clock, CheckCircle, AlertCircle, Search } from 'lucide-react';
+import { Plus, Upload, FileText, Clock, CheckCircle, AlertCircle, Search, Bookmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useVoice } from '@/contexts/VoiceContext';
 import { useDocument, Document } from '@/contexts/DocumentContext';
@@ -14,7 +13,7 @@ import { VoiceAssistant } from '@/components/VoiceAssistant';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { speak, stop } = useVoice();
-  const { documents } = useDocument();
+  const { documents, templates } = useDocument();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
 
@@ -38,6 +37,11 @@ const Dashboard = () => {
   const handleNewDocument = () => {
     speak("Perfect! Let's create a new document. I'll guide you through uploading a PDF and setting up signature fields.", 'high');
     setTimeout(() => navigate('/editor'), 1000);
+  };
+
+  const handleTemplates = () => {
+    speak(`You have ${templates.length} templates available. Templates help you create documents faster by reusing common layouts.`, 'normal');
+    setTimeout(() => navigate('/templates'), 800);
   };
 
   const handleDocumentClick = (doc: Document) => {
@@ -86,10 +90,16 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold">Document Dashboard</h1>
             <p className="text-gray-600">Manage and track all your documents</p>
           </div>
-          <Button onClick={handleNewDocument} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New Document
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleTemplates} className="flex items-center gap-2">
+              <Bookmark className="h-4 w-4" />
+              Templates ({templates.length})
+            </Button>
+            <Button onClick={handleNewDocument} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              New Document
+            </Button>
+          </div>
         </div>
 
         {/* Search and Filters */}
