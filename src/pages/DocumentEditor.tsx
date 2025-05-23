@@ -14,28 +14,31 @@ import {
   PenTool, 
   CheckSquare,
   Users,
-  Plus
+  Plus,
+  Settings
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useVoice } from '@/contexts/VoiceContext';
 import { useDocument, DocumentField } from '@/contexts/DocumentContext';
 import { VoiceAssistant } from '@/components/VoiceAssistant';
+import { PDFViewer } from '@/components/PDFViewer';
+import { FieldEditor } from '@/components/FieldEditor';
 import { toast } from '@/hooks/use-toast';
 
 const DocumentEditor = () => {
   const navigate = useNavigate();
   const { documentId } = useParams();
   const { speak, stop } = useVoice();
-  const { documents, currentDocument, setCurrentDocument, createDocument, addField, updateField, removeField } = useDocument();
+  const { documents, currentDocument, setCurrentDocument, createDocument, addField, updateField, removeField, addSigner } = useDocument();
   
   const [pdfData, setPdfData] = useState<string>('');
   const [documentTitle, setDocumentTitle] = useState('');
   const [selectedTool, setSelectedTool] = useState<DocumentField['type'] | null>(null);
-  const [draggedField, setDraggedField] = useState<DocumentField | null>(null);
-  const [showSignerDialog, setShowSignerDialog] = useState(false);
+  const [editingField, setEditingField] = useState<DocumentField | null>(null);
+  const [newSignerName, setNewSignerName] = useState('');
+  const [newSignerEmail, setNewSignerEmail] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     stop();
@@ -133,21 +136,19 @@ const DocumentEditor = () => {
     speak(`${toolName} tool selected. Now click on your document where you want to place this field. I'll help you position it correctly.`, 'normal');
   };
 
-  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleCanvasClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!selectedTool || !currentDocument) return;
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
+    const element = event.currentTarget;
+    const rect = element.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 100;
     const y = ((event.clientY - rect.top) / rect.height) * 100;
 
     const newField: Omit<DocumentField, 'id'> = {
       type: selectedTool,
-      x,
-      y,
-      width: selectedTool === 'signature' ? 15 : 10,
+      x: Math.max(0, Math.min(95, x)),
+      y: Math.max(0, Math.min(95, y)),
+      width: selectedTool === 'signature' ? 15 : selectedTool === 'checkbox' ? 3 : 10,
       height: selectedTool === 'signature' ? 5 : 3,
       required: true,
     };
@@ -156,7 +157,57 @@ const DocumentEditor = () => {
     setSelectedTool(null);
     
     const toolName = tools.find(t => t.type === selectedTool)?.label || selectedTool;
-    speak(`${toolName} field added! You can drag it to reposition or click on it to modify its properties. Great job!`, 'normal');
+    speak(`${toolName} field added! You can click on it to modify its properties or drag it to reposition. Great job!`, 'normal');
+  };
+
+  const handleFieldClick = (fieldId: string) => {
+    if (selectedTool) return; // Don't edit when placing new fields
+    
+    const field = currentDocument?.fields.find(f => f.id === fieldId);
+    if (field) {
+      setEditingField(field);
+      speak("Opening field editor. Here you can adjust the position, size, and properties of this field.", 'normal');
+    }
+  };
+
+  const handleFieldUpdate = (fieldId: string, updates: Partial<DocumentField>) => {
+    updateField(fieldId, updates);
+    speak("Field updated successfully!", 'normal');
+  };
+
+  const handleFieldDelete = (fieldId: string) => {
+    removeField(fieldId);
+    setEditingField(null);
+    speak("Field deleted successfully!", 'normal');
+  };
+
+  const handleAddSigner = () => {
+    if (!newSignerEmail.trim() || !newSignerName.trim()) {
+      speak("Please enter both the signer's name and email address.", 'high');
+      return;
+    }
+
+    if (!currentDocument) {
+      speak("Please save your document first before adding signers.", 'high');
+      return;
+    }
+
+    addSigner({
+      name: newSignerName,
+      email: newSignerEmail,
+      role: 'signer',
+      status: 'pending'
+    });
+
+    setNewSignerEmail('');
+    setNewSignerName('');
+    
+    speak(`${newSignerName} has been added as a signer. They'll receive the document at ${newSignerEmail} when you send it.`, 'normal');
+    
+    toast({
+      title: "Signer added",
+      description: `${newSignerName} has been added to the document`
+    });
   };
 
   return (
@@ -192,7 +243,7 @@ const DocumentEditor = () => {
 
         <div className="grid lg:grid-cols-12 gap-6">
           {/* Tools Sidebar */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 space-y-6">
             <Card>
               <CardContent className="p-4">
                 <h3 className="font-semibold mb-4">Document Tools</h3>
@@ -264,57 +315,73 @@ const DocumentEditor = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Signers Management */}
+            {currentDocument && (
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Signers
+                  </h3>
+                  
+                  <div className="space-y-2 mb-4">
+                    {currentDocument.signers.map((signer) => (
+                      <div key={signer.id} className="flex items-center justify-between p-2 border rounded text-sm">
+                        <div>
+                          <div className="font-medium">{signer.name}</div>
+                          <div className="text-gray-600 text-xs">{signer.email}</div>
+                        </div>
+                        <Badge variant="outline">{signer.status}</Badge>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Signer name"
+                      value={newSignerName}
+                      onChange={(e) => setNewSignerName(e.target.value)}
+                    />
+                    <Input
+                      placeholder="Signer email"
+                      type="email"
+                      value={newSignerEmail}
+                      onChange={(e) => setNewSignerEmail(e.target.value)}
+                    />
+                    <Button onClick={handleAddSigner} size="sm" className="w-full">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Signer
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Main Editor */}
           <div className="lg:col-span-9">
-            <Card className="h-[800px]">
-              <CardContent className="p-4 h-full">
-                {pdfData ? (
-                  <div className="relative h-full border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
-                    <canvas
-                      ref={canvasRef}
-                      onClick={handleCanvasClick}
-                      className="w-full h-full bg-white cursor-crosshair"
-                      style={{ backgroundImage: `url(${pdfData})`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }}
-                    />
-                    
-                    {/* Render fields */}
-                    {currentDocument?.fields.map((field) => (
-                      <div
-                        key={field.id}
-                        className="absolute border-2 border-blue-500 bg-blue-100 bg-opacity-50 cursor-move flex items-center justify-center text-xs font-medium"
-                        style={{
-                          left: `${field.x}%`,
-                          top: `${field.y}%`,
-                          width: `${field.width}%`,
-                          height: `${field.height}%`,
-                        }}
-                      >
-                        {field.type}
-                      </div>
-                    ))}
-                    
-                    {selectedTool && (
-                      <div className="absolute top-4 left-4 bg-blue-600 text-white px-3 py-1 rounded-md text-sm">
-                        Click to place {selectedTool} field
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    <div className="text-center">
-                      <Upload className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                      <h3 className="text-lg font-medium mb-2">Upload a PDF to get started</h3>
-                      <p className="text-sm text-gray-600">Choose a PDF file to add signature fields and prepare for signing</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <PDFViewer
+              pdfData={pdfData}
+              fields={currentDocument?.fields || []}
+              onFieldClick={handleFieldClick}
+              selectedTool={selectedTool}
+              onCanvasClick={handleCanvasClick}
+            />
           </div>
         </div>
       </div>
+
+      {/* Field Editor Modal */}
+      {editingField && (
+        <FieldEditor
+          field={editingField}
+          signers={currentDocument?.signers || []}
+          onUpdate={(updates) => handleFieldUpdate(editingField.id, updates)}
+          onDelete={() => handleFieldDelete(editingField.id)}
+          onClose={() => setEditingField(null)}
+        />
+      )}
       
       <VoiceAssistant />
     </div>

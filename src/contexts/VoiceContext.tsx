@@ -22,6 +22,7 @@ const VoiceContext = createContext<VoiceContextType | undefined>(undefined);
 export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [lastInstruction, setLastInstruction] = useState('');
+  const [voicesLoaded, setVoicesLoaded] = useState(false);
   const [settings, setSettings] = useState<VoiceSettings>(() => {
     const saved = localStorage.getItem('docuSignClone_voiceSettings');
     return saved ? JSON.parse(saved) : {
@@ -35,25 +36,66 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
   const voiceQueue = useRef<{ text: string; priority: 'low' | 'normal' | 'high' }[]>([]);
 
+  // Wait for voices to load
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        setVoicesLoaded(true);
+      }
+    };
+
+    loadVoices();
+    speechSynthesis.addEventListener('voiceschanged', loadVoices);
+
+    return () => {
+      speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+    };
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('docuSignClone_voiceSettings', JSON.stringify(settings));
   }, [settings]);
 
   const getVoice = () => {
+    if (!voicesLoaded) return null;
+    
     const voices = speechSynthesis.getVoices();
+    if (voices.length === 0) return null;
+
     // Prefer female voices with natural sound
-    const preferredVoices = voices.filter(voice => 
-      voice.name.includes('Samantha') || 
-      voice.name.includes('Karen') || 
-      voice.name.includes('Susan') ||
-      voice.name.includes('Google UK English Female') ||
-      (voice.name.includes('Female') && voice.lang.includes('en'))
-    );
-    return preferredVoices[0] || voices.find(voice => voice.lang.includes('en')) || voices[0];
+    const preferredVoices = voices.filter(voice => {
+      const name = voice.name.toLowerCase();
+      const lang = voice.lang.toLowerCase();
+      return (
+        lang.includes('en') && (
+          name.includes('samantha') || 
+          name.includes('karen') || 
+          name.includes('susan') ||
+          name.includes('female') ||
+          name.includes('zira') ||
+          name.includes('hazel')
+        )
+      );
+    });
+
+    if (preferredVoices.length > 0) {
+      return preferredVoices[0];
+    }
+
+    // Fallback to any English voice
+    const englishVoices = voices.filter(voice => voice.lang.includes('en'));
+    return englishVoices[0] || voices[0];
   };
 
   const speak = (text: string, priority: 'low' | 'normal' | 'high' = 'normal') => {
     if (!settings.enabled || !text.trim()) return;
+
+    // Check if speech synthesis is available
+    if (!('speechSynthesis' in window)) {
+      console.warn('Speech synthesis not supported');
+      return;
+    }
 
     // Handle priority - high priority interrupts current speech
     if (priority === 'high' && isPlaying) {
@@ -76,42 +118,56 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const nextItem = voiceQueue.current.shift();
     if (!nextItem) return;
 
-    const utterance = new SpeechSynthesisUtterance(nextItem.text);
-    const voice = getVoice();
-    
-    if (voice) utterance.voice = voice;
-    utterance.rate = settings.speed;
-    utterance.pitch = settings.pitch;
-    utterance.volume = settings.volume;
+    try {
+      const utterance = new SpeechSynthesisUtterance(nextItem.text);
+      const voice = getVoice();
+      
+      if (voice) {
+        utterance.voice = voice;
+      }
+      
+      utterance.rate = Math.max(0.1, Math.min(2.0, settings.speed));
+      utterance.pitch = Math.max(0.0, Math.min(2.0, settings.pitch));
+      utterance.volume = Math.max(0.0, Math.min(1.0, settings.volume));
 
-    utterance.onstart = () => {
-      setIsPlaying(true);
-      setLastInstruction(nextItem.text);
-    };
+      utterance.onstart = () => {
+        setIsPlaying(true);
+        setLastInstruction(nextItem.text);
+      };
 
-    utterance.onend = () => {
+      utterance.onend = () => {
+        setIsPlaying(false);
+        currentUtterance.current = null;
+        // Process next item in queue after a brief pause
+        setTimeout(processQueue, 300);
+      };
+
+      utterance.onerror = (event) => {
+        console.warn('Speech synthesis error:', event.error);
+        setIsPlaying(false);
+        currentUtterance.current = null;
+        // Try to process next item after error
+        setTimeout(processQueue, 1000);
+      };
+
+      currentUtterance.current = utterance;
+      speechSynthesis.speak(utterance);
+    } catch (error) {
+      console.error('Error creating speech utterance:', error);
       setIsPlaying(false);
-      currentUtterance.current = null;
-      // Process next item in queue after a brief pause
-      setTimeout(processQueue, 500);
-    };
-
-    utterance.onerror = () => {
-      setIsPlaying(false);
-      currentUtterance.current = null;
-      console.warn('Speech synthesis error');
       setTimeout(processQueue, 1000);
-    };
-
-    currentUtterance.current = utterance;
-    speechSynthesis.speak(utterance);
+    }
   };
 
   const stop = () => {
-    speechSynthesis.cancel();
-    voiceQueue.current = [];
-    setIsPlaying(false);
-    currentUtterance.current = null;
+    try {
+      speechSynthesis.cancel();
+      voiceQueue.current = [];
+      setIsPlaying(false);
+      currentUtterance.current = null;
+    } catch (error) {
+      console.error('Error stopping speech:', error);
+    }
   };
 
   const updateSettings = (newSettings: Partial<VoiceSettings>) => {
