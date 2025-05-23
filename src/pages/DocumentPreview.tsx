@@ -79,13 +79,14 @@ const DocumentPreview = () => {
       speak(`Please enter the ${field.type === 'date' ? 'date' : 'text'} for this field.`, 'normal');
       setShowTextInput(true);
     } else if (field.type === 'checkbox') {
-      const newValue = !field.value;
+      // Convert to string since DocumentField.value is string type
+      const newValue = field.value === 'true' ? 'false' : 'true';
       updateDocument(document.id, {
         fields: document.fields.map(f => 
           f.id === field.id ? { ...f, value: newValue } : f
         )
       });
-      speak(newValue ? "Checkbox checked!" : "Checkbox unchecked!", 'normal');
+      speak(newValue === 'true' ? "Checkbox checked!" : "Checkbox unchecked!", 'normal');
     }
   };
 

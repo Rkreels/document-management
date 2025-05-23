@@ -1,8 +1,14 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ZoomIn, ZoomOut, RotateCw, Download } from 'lucide-react';
 import { DocumentField } from '@/contexts/DocumentContext';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Set up the PDF.js worker
+const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 
 interface PDFViewerProps {
   pdfData: string;
@@ -30,10 +36,6 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
       setError(null);
 
       try {
-        // PDF.js setup
-        const pdfjsLib = await import('pdfjs-dist');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-
         // Decode base64
         const decodedPdfData = atob(pdfData);
 
@@ -46,7 +48,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
         const pdf = await pdfjsLib.getDocument(uint8Array).promise;
         const page = await pdf.getPage(1);
 
-        const viewport = page.getViewport({ scale: zoom });
+        const viewport = page.getViewport({ scale: zoom, rotation });
         const canvas = canvasRef.current;
         if (!canvas) return;
 
@@ -98,9 +100,6 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   const renderFields = () => {
     if (!canvasRef.current) return null;
 
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-
     return fields.map(field => {
       const style: React.CSSProperties = {
         position: 'absolute',
@@ -126,7 +125,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
           if (field.type === 'signature') {
             return '✓ Signed';
           } else if (field.type === 'checkbox') {
-            return field.value ? '☑' : '☐';
+            return field.value === 'true' ? '☑' : '☐';
           } else {
             return field.value.toString().substring(0, 20) + (field.value.toString().length > 20 ? '...' : '');
           }
