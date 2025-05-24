@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Send, Download, Edit, CheckCircle, Clock, Users } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Send, Download, Edit, CheckCircle, Clock, Users, FileText, Share } from 'lucide-react';
 import { useVoice } from '@/contexts/VoiceContext';
 import { useDocument, DocumentField } from '@/contexts/DocumentContext';
 import { PDFViewer } from '@/components/PDFViewer';
 import { SignaturePad } from '@/components/SignaturePad';
 import { TextFieldInput } from '@/components/TextFieldInput';
+import { DocumentSender } from '@/components/DocumentSender';
 import { VoiceAssistant } from '@/components/VoiceAssistant';
 
 const DocumentPreview = () => {
@@ -20,9 +22,11 @@ const DocumentPreview = () => {
   const { documents, updateDocument } = useDocument();
   const [showSignaturePad, setShowSignaturePad] = useState(false);
   const [showTextInput, setShowTextInput] = useState(false);
+  const [showSender, setShowSender] = useState(false);
   const [selectedField, setSelectedField] = useState<DocumentField | null>(null);
   const [signingMode, setSigningMode] = useState(false);
   const [currentFieldType, setCurrentFieldType] = useState<'signature' | 'text' | 'date' | 'checkbox'>('signature');
+  const [activeTab, setActiveTab] = useState('preview');
 
   const document = documents.find(doc => doc.id === documentId);
 
@@ -79,7 +83,6 @@ const DocumentPreview = () => {
       speak(`Please enter the ${field.type === 'date' ? 'date' : 'text'} for this field.`, 'normal');
       setShowTextInput(true);
     } else if (field.type === 'checkbox') {
-      // Convert to string since DocumentField.value is string type
       const newValue = field.value === 'true' ? 'false' : 'true';
       updateDocument(document.id, {
         fields: document.fields.map(f => 
@@ -123,14 +126,6 @@ const DocumentPreview = () => {
     speak("Operation cancelled. You can click on another field to continue.", 'normal');
   };
 
-  const handleSendDocument = () => {
-    updateDocument(document.id, { 
-      status: 'sent',
-      updatedAt: new Date()
-    });
-    speak("Document sent for signing! The signers will receive an email with the signing link.", 'high');
-  };
-
   const handleEditDocument = () => {
     speak("Taking you to the document editor where you can modify fields and signers.", 'normal');
     setTimeout(() => navigate(`/editor/${documentId}`), 1000);
@@ -148,6 +143,8 @@ const DocumentPreview = () => {
       sent: { label: 'Sent', variant: 'default' as const, icon: Clock },
       completed: { label: 'Completed', variant: 'default' as const, icon: CheckCircle },
       declined: { label: 'Declined', variant: 'destructive' as const, icon: Clock },
+      voided: { label: 'Voided', variant: 'destructive' as const, icon: Clock },
+      expired: { label: 'Expired', variant: 'destructive' as const, icon: Clock },
     };
     
     const config = statusConfig[document.status];
@@ -185,19 +182,15 @@ const DocumentPreview = () => {
             <Button variant="outline" onClick={() => setSigningMode(!signingMode)}>
               {signingMode ? 'Exit Signing Mode' : 'Test Signing'}
             </Button>
-            {!signingMode && (
-              <>
-                <Button variant="outline" onClick={handleEditDocument}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-                {document.status === 'draft' && (
-                  <Button onClick={handleSendDocument}>
-                    <Send className="h-4 w-4 mr-2" />
-                    Send for Signing
-                  </Button>
-                )}
-              </>
+            <Button variant="outline" onClick={handleEditDocument}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            {document.status === 'draft' && (
+              <Button onClick={() => setShowSender(true)}>
+                <Send className="h-4 w-4 mr-2" />
+                Send for Signing
+              </Button>
             )}
           </div>
         </div>
@@ -262,41 +255,86 @@ const DocumentPreview = () => {
           </Card>
         )}
 
-        {/* PDF Viewer */}
-        <Card>
-          <CardContent className="p-0">
-            <PDFViewer
-              pdfData={document.content}
-              fields={document.fields}
-              onFieldClick={handleFieldClick}
-              signingMode={signingMode}
-            />
-          </CardContent>
-        </Card>
+        {/* Main Content */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="preview">
+              <FileText className="h-4 w-4 mr-2" />
+              Preview
+            </TabsTrigger>
+            <TabsTrigger value="signers">
+              <Users className="h-4 w-4 mr-2" />
+              Signers
+            </TabsTrigger>
+            {document.status === 'draft' && (
+              <TabsTrigger value="send">
+                <Send className="h-4 w-4 mr-2" />
+                Send
+              </TabsTrigger>
+            )}
+          </TabsList>
 
-        {/* Signers List */}
-        {document.signers.length > 0 && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Signers</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {document.signers.map((signer) => (
-                  <div key={signer.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{signer.name}</p>
-                      <p className="text-sm text-gray-600">{signer.email}</p>
+          <TabsContent value="preview">
+            <Card>
+              <CardContent className="p-0">
+                <PDFViewer
+                  pdfData={document.content}
+                  fields={document.fields}
+                  onFieldClick={handleFieldClick}
+                  signingMode={signingMode}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="signers">
+            <Card>
+              <CardHeader>
+                <CardTitle>Signers</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {document.signers.map((signer) => (
+                    <div key={signer.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{signer.name}</p>
+                        <p className="text-sm text-gray-600">{signer.email}</p>
+                        {signer.signedAt && (
+                          <p className="text-xs text-green-600">
+                            Signed on {signer.signedAt.toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={
+                          signer.status === 'signed' ? 'default' : 
+                          signer.status === 'declined' ? 'destructive' : 'secondary'
+                        }>
+                          {signer.status}
+                        </Badge>
+                        <Badge variant="outline">
+                          {signer.role}
+                        </Badge>
+                      </div>
                     </div>
-                    <Badge variant="secondary">
-                      {signer.role}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {document.status === 'draft' && (
+            <TabsContent value="send">
+              <DocumentSender
+                document={document}
+                onSent={() => {
+                  setActiveTab('preview');
+                  speak("Document sent successfully! All signers will receive an email notification.", 'high');
+                }}
+              />
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
 
       {/* Modals */}

@@ -13,6 +13,7 @@ import DocumentEditor from "./pages/DocumentEditor";
 import DocumentPreview from "./pages/DocumentPreview";
 import Templates from "./pages/Templates";
 import TemplateEditor from "./pages/TemplateEditor";
+import SigningPage from "./pages/SigningPage";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/preview/:documentId" element={<DocumentPreview />} />
               <Route path="/templates" element={<Templates />} />
               <Route path="/template-editor/:templateId?" element={<TemplateEditor />} />
+              <Route path="/sign/:documentId/:signerId" element={<SigningPage />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
