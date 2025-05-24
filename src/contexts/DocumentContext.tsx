@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { generateDemoData } from '@/services/demoData';
 
 export interface DocumentField {
   id: string;
@@ -24,6 +25,8 @@ export interface DocumentField {
     pattern?: string;
     message?: string;
   };
+  tooltip?: string;
+  placeholder?: string;
 }
 
 export interface Signer {
@@ -33,7 +36,7 @@ export interface Signer {
   role: 'signer' | 'viewer' | 'approver' | 'cc' | 'witness';
   status: 'pending' | 'signed' | 'declined' | 'viewed';
   signedAt?: Date;
-  order: number; // For sequential signing
+  order: number;
   canDelegate: boolean;
   delegatedTo?: {
     name: string;
@@ -42,6 +45,10 @@ export interface Signer {
   };
   requireAuth?: 'none' | 'email' | 'sms' | 'knowledge';
   ipRestrictions?: string[];
+  language?: string;
+  timezone?: string;
+  phoneNumber?: string;
+  accessCode?: string;
 }
 
 export interface DocumentTemplate {
@@ -49,7 +56,7 @@ export interface DocumentTemplate {
   name: string;
   description: string;
   content: string;
-  fields: DocumentField[];
+  fields: Omit<DocumentField, 'id'>[];
   signers: Omit<Signer, 'id' | 'status' | 'signedAt'>[];
   createdAt: Date;
   updatedAt: Date;
@@ -57,6 +64,9 @@ export interface DocumentTemplate {
   tags?: string[];
   isPublic: boolean;
   usageCount: number;
+  thumbnail?: string;
+  industry?: string;
+  estimatedTime?: number; // in minutes
 }
 
 export interface Document {
@@ -82,17 +92,35 @@ export interface Document {
   metadata?: {
     source?: string;
     customFields?: Record<string, string>;
+    tags?: string[];
+    priority?: 'low' | 'normal' | 'high' | 'urgent';
   };
   notifications?: {
     emailTemplate?: string;
     sendCopyToSender: boolean;
     ccEmails?: string[];
+    customMessage?: string;
   };
   security?: {
     requireAuth: boolean;
     allowPrinting: boolean;
     allowDownload: boolean;
     watermark?: string;
+    passwordProtected?: boolean;
+    encryptionLevel?: 'standard' | 'high';
+  };
+  workflow?: {
+    approvalRequired: boolean;
+    approvers?: string[];
+    escalationRules?: {
+      timeLimit: number; // hours
+      escalateTo: string;
+    };
+  };
+  analytics?: {
+    viewCount: number;
+    timeSpent?: number; // seconds
+    clickHeatmap?: { x: number; y: number; count: number }[];
   };
 }
 
@@ -103,15 +131,19 @@ export interface AuditEntry {
   user: string;
   ipAddress?: string;
   details?: string;
+  deviceInfo?: string;
+  location?: string;
 }
 
 export interface Notification {
   id: string;
   documentId: string;
-  type: 'reminder' | 'completion' | 'decline' | 'view';
+  type: 'reminder' | 'completion' | 'decline' | 'view' | 'approval' | 'escalation';
   recipientEmail: string;
   sentAt: Date;
-  status: 'sent' | 'delivered' | 'opened';
+  status: 'sent' | 'delivered' | 'opened' | 'clicked';
+  scheduledFor?: Date;
+  retryCount?: number;
 }
 
 interface DocumentContextType {
@@ -158,11 +190,24 @@ interface DocumentContextType {
     completed: number;
     pending: number;
     averageCompletionTime: number;
+    completionRate: number;
   };
   
   // Notifications
   sendReminder: (documentId: string, signerId?: string) => void;
   createNotification: (notification: Omit<Notification, 'id'>) => void;
+  
+  // Bulk operations
+  bulkAction: (documentIds: string[], action: 'send' | 'void' | 'delete' | 'remind') => void;
+  
+  // Advanced features
+  scheduleReminder: (documentId: string, scheduledFor: Date, customMessage?: string) => void;
+  exportDocument: (documentId: string, format: 'pdf' | 'docx') => void;
+  createSigningLink: (documentId: string, signerId: string) => string;
+  
+  // Demo data
+  loadDemoData: () => void;
+  clearAllData: () => void;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -173,12 +218,27 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
 
-  // Load documents from localStorage on mount
+  // Load data from localStorage or demo data on mount
   useEffect(() => {
-    const saved = localStorage.getItem('docuSignClone_documents');
-    if (saved) {
+    const savedDocs = localStorage.getItem('docuSignClone_documents');
+    const savedTemplates = localStorage.getItem('docuSignClone_templates');
+    const savedNotifications = localStorage.getItem('docuSignClone_notifications');
+    
+    // If no saved data exists, load demo data
+    if (!savedDocs || !savedTemplates) {
+      const demoData = generateDemoData();
+      setDocuments(demoData.documents);
+      setTemplates(demoData.templates);
+      setNotifications(demoData.notifications);
+      
+      // Save demo data to localStorage
+      localStorage.setItem('docuSignClone_documents', JSON.stringify(demoData.documents));
+      localStorage.setItem('docuSignClone_templates', JSON.stringify(demoData.templates));
+      localStorage.setItem('docuSignClone_notifications', JSON.stringify(demoData.notifications));
+    } else {
+      // Load existing data
       try {
-        const parsedDocs = JSON.parse(saved).map((doc: any) => ({
+        const parsedDocs = JSON.parse(savedDocs).map((doc: any) => ({
           ...doc,
           createdAt: new Date(doc.createdAt),
           updatedAt: new Date(doc.updatedAt),
@@ -188,40 +248,51 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             ...entry,
             timestamp: new Date(entry.timestamp)
           })) || [],
+          signers: doc.signers?.map((signer: any) => ({
+            ...signer,
+            signedAt: signer.signedAt ? new Date(signer.signedAt) : undefined,
+          })) || [],
         }));
         setDocuments(parsedDocs);
-      } catch (error) {
-        console.error('Error loading documents from localStorage:', error);
-      }
-    }
-  }, []);
-
-  // Load templates from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('docuSignClone_templates');
-    if (saved) {
-      try {
-        const parsedTemplates = JSON.parse(saved).map((template: any) => ({
+        
+        const parsedTemplates = JSON.parse(savedTemplates).map((template: any) => ({
           ...template,
           createdAt: new Date(template.createdAt),
           updatedAt: new Date(template.updatedAt),
         }));
         setTemplates(parsedTemplates);
+        
+        if (savedNotifications) {
+          const parsedNotifications = JSON.parse(savedNotifications).map((notif: any) => ({
+            ...notif,
+            sentAt: new Date(notif.sentAt),
+            scheduledFor: notif.scheduledFor ? new Date(notif.scheduledFor) : undefined,
+          }));
+          setNotifications(parsedNotifications);
+        }
       } catch (error) {
-        console.error('Error loading templates from localStorage:', error);
+        console.error('Error loading data from localStorage:', error);
+        // Fallback to demo data if parsing fails
+        const demoData = generateDemoData();
+        setDocuments(demoData.documents);
+        setTemplates(demoData.templates);
+        setNotifications(demoData.notifications);
       }
     }
   }, []);
 
-  // Save documents to localStorage whenever documents change
+  // Save to localStorage whenever data changes
   useEffect(() => {
     localStorage.setItem('docuSignClone_documents', JSON.stringify(documents));
   }, [documents]);
 
-  // Save templates to localStorage whenever templates change
   useEffect(() => {
     localStorage.setItem('docuSignClone_templates', JSON.stringify(templates));
   }, [templates]);
+
+  useEffect(() => {
+    localStorage.setItem('docuSignClone_notifications', JSON.stringify(notifications));
+  }, [notifications]);
 
   const addAuditEntry = (documentId: string, action: string, user: string, details?: string) => {
     const entry: AuditEntry = {
@@ -230,6 +301,8 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       action,
       user,
       details,
+      deviceInfo: navigator.userAgent,
+      ipAddress: '192.168.1.1', // Would be real IP in production
     };
     
     setDocuments(prev => prev.map(doc => 
@@ -252,6 +325,20 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       templateId,
       signingOrder: 'parallel',
       auditTrail: [],
+      analytics: {
+        viewCount: 0,
+        timeSpent: 0,
+        clickHeatmap: [],
+      },
+      security: {
+        requireAuth: false,
+        allowPrinting: true,
+        allowDownload: true,
+      },
+      notifications: {
+        sendCopyToSender: true,
+        ccEmails: [],
+      },
     };
 
     addAuditEntry(newDocument.id, 'Document Created', 'System', `Document "${title}" created`);
@@ -300,7 +387,10 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         ...signer,
         id: `signer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         status: 'pending',
+        signedAt: undefined,
       })),
+      security: original.security,
+      notifications: original.notifications,
     });
 
     return duplicate;
@@ -314,6 +404,89 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const sendDocument = (id: string, message?: string) => {
     updateDocument(id, { status: 'sent' });
     addAuditEntry(id, 'Document Sent', 'User', message || 'Document sent for signing');
+  };
+
+  const getDocumentStats = () => {
+    const total = documents.length;
+    const completed = documents.filter(d => d.status === 'completed').length;
+    const pending = documents.filter(d => d.status === 'sent').length;
+    const completionRate = total > 0 ? (completed / total) * 100 : 0;
+    
+    const completedDocs = documents.filter(d => d.completedAt);
+    const averageCompletionTime = completedDocs.length > 0 
+      ? completedDocs.reduce((acc, doc) => {
+          const timeDiff = doc.completedAt!.getTime() - doc.createdAt.getTime();
+          return acc + timeDiff;
+        }, 0) / completedDocs.length / (1000 * 60 * 60 * 24)
+      : 0;
+
+    return { total, completed, pending, averageCompletionTime, completionRate };
+  };
+
+  const bulkAction = (documentIds: string[], action: 'send' | 'void' | 'delete' | 'remind') => {
+    documentIds.forEach(id => {
+      switch (action) {
+        case 'send':
+          sendDocument(id);
+          break;
+        case 'void':
+          voidDocument(id, 'Bulk void operation');
+          break;
+        case 'delete':
+          deleteDocument(id);
+          break;
+        case 'remind':
+          sendReminder(id);
+          break;
+      }
+    });
+  };
+
+  const scheduleReminder = (documentId: string, scheduledFor: Date, customMessage?: string) => {
+    const notification: Notification = {
+      id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      documentId,
+      type: 'reminder',
+      recipientEmail: 'system@company.com', // Would be dynamic in production
+      sentAt: new Date(),
+      status: 'sent',
+      scheduledFor,
+    };
+    
+    setNotifications(prev => [...prev, notification]);
+    addAuditEntry(documentId, 'Reminder Scheduled', 'User', 
+      `Reminder scheduled for ${scheduledFor.toLocaleDateString()}`);
+  };
+
+  const exportDocument = (documentId: string, format: 'pdf' | 'docx') => {
+    const doc = documents.find(d => d.id === documentId);
+    if (!doc) return;
+    
+    addAuditEntry(documentId, 'Document Exported', 'User', `Exported as ${format.toUpperCase()}`);
+    // In a real app, this would trigger a download
+    console.log(`Exporting ${doc.title} as ${format}`);
+  };
+
+  const createSigningLink = (documentId: string, signerId: string): string => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/sign/${documentId}/${signerId}`;
+  };
+
+  const loadDemoData = () => {
+    const demoData = generateDemoData();
+    setDocuments(demoData.documents);
+    setTemplates(demoData.templates);
+    setNotifications(demoData.notifications);
+  };
+
+  const clearAllData = () => {
+    setDocuments([]);
+    setTemplates([]);
+    setNotifications([]);
+    setCurrentDocument(null);
+    localStorage.removeItem('docuSignClone_documents');
+    localStorage.removeItem('docuSignClone_templates');
+    localStorage.removeItem('docuSignClone_notifications');
   };
 
   const delegateSigner = (signerId: string, delegate: { name: string; email: string }) => {
@@ -348,26 +521,9 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       .sort((a, b) => a.order - b.order)[0];
 
     if (nextSigner) {
-      // Logic to notify next signer
       addAuditEntry(documentId, 'Next Signer Notified', 'System', 
         `Notified ${nextSigner.name} (${nextSigner.email})`);
     }
-  };
-
-  const getDocumentStats = () => {
-    const total = documents.length;
-    const completed = documents.filter(d => d.status === 'completed').length;
-    const pending = documents.filter(d => d.status === 'sent').length;
-    
-    const completedDocs = documents.filter(d => d.completedAt);
-    const averageCompletionTime = completedDocs.length > 0 
-      ? completedDocs.reduce((acc, doc) => {
-          const timeDiff = doc.completedAt!.getTime() - doc.createdAt.getTime();
-          return acc + timeDiff;
-        }, 0) / completedDocs.length / (1000 * 60 * 60 * 24) // Convert to days
-      : 0;
-
-    return { total, completed, pending, averageCompletionTime };
   };
 
   const sendReminder = (documentId: string, signerId?: string) => {
@@ -472,8 +628,6 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       id: `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       createdAt: new Date(),
       updatedAt: new Date(),
-      isPublic: false,
-      usageCount: 0,
     };
 
     setTemplates(prev => [...prev, newTemplate]);
@@ -498,7 +652,6 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       throw new Error('Template not found');
     }
 
-    // Increment usage count
     updateTemplate(templateId, { usageCount: template.usageCount + 1 });
 
     const newDocument: Document = {
@@ -520,6 +673,20 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       templateId,
       signingOrder: 'parallel',
       auditTrail: [],
+      analytics: {
+        viewCount: 0,
+        timeSpent: 0,
+        clickHeatmap: [],
+      },
+      security: {
+        requireAuth: false,
+        allowPrinting: true,
+        allowDownload: true,
+      },
+      notifications: {
+        sendCopyToSender: true,
+        ccEmails: [],
+      },
     };
 
     addAuditEntry(newDocument.id, 'Document Created from Template', 'User', 
@@ -557,6 +724,12 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       getDocumentStats,
       sendReminder,
       createNotification,
+      bulkAction,
+      scheduleReminder,
+      exportDocument,
+      createSigningLink,
+      loadDemoData,
+      clearAllData,
     }}>
       {children}
     </DocumentContext.Provider>

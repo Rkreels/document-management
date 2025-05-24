@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Clock, User, FileText, Send } from 'lucide-react';
+import { CheckCircle, Clock, User, FileText, Send, AlertCircle, HelpCircle } from 'lucide-react';
 import { useDocument, Document, DocumentField, Signer } from '@/contexts/DocumentContext';
+import { useVoice } from '@/contexts/VoiceContext';
 import { PDFViewer } from './PDFViewer';
 import { SignaturePad } from './SignaturePad';
 import { TextFieldInput } from './TextFieldInput';
@@ -22,10 +23,22 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
   onComplete
 }) => {
   const { updateDocument, updateSigner } = useDocument();
+  const { 
+    speak, 
+    announceFieldFocus, 
+    announceFieldComplete, 
+    announceProgress, 
+    announceSuccess, 
+    announceError,
+    announceWorkflowStep,
+    settings 
+  } = useVoice();
+  
   const [currentFieldIndex, setCurrentFieldIndex] = useState(0);
   const [showSignaturePad, setShowSignaturePad] = useState(false);
   const [showTextInput, setShowTextInput] = useState(false);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [hasAnnounced, setHasAnnounced] = useState(false);
 
   const signerFields = document.fields.filter(field => 
     field.signerId === currentSigner.id || !field.signerId
@@ -47,19 +60,69 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
     setFieldValues(initialValues);
   }, [document.fields]);
 
+  useEffect(() => {
+    if (!hasAnnounced && settings.enabled) {
+      const totalFields = requiredFields.length;
+      const completedCount = completedFields.length;
+      
+      // Initial announcement
+      setTimeout(() => {
+        speak(`Welcome to the document signing interface for ${document.title}. You have ${totalFields} required fields to complete. ${completedCount} fields are already completed.`, 'high');
+        
+        if (totalFields > 0 && completedCount < totalFields) {
+          setTimeout(() => {
+            announceWorkflowStep(
+              'Field Navigation',
+              'Click on highlighted fields in the document to fill them out. Use Tab to navigate between fields, or use the arrow keys for field-by-field guidance.'
+            );
+          }, 3000);
+        }
+        
+        setHasAnnounced(true);
+      }, 1000);
+    }
+  }, [hasAnnounced, settings.enabled, document.title, requiredFields.length, completedFields.length]);
+
+  useEffect(() => {
+    // Announce progress when completion status changes
+    if (hasAnnounced) {
+      announceProgress(completedFields.length, requiredFields.length, 'Document signing');
+    }
+  }, [completedFields.length, requiredFields.length, hasAnnounced]);
+
   const handleFieldComplete = (fieldId: string, value: string) => {
+    const field = document.fields.find(f => f.id === fieldId);
+    if (!field) return;
+
     setFieldValues(prev => ({ ...prev, [fieldId]: value }));
     
     // Update document field
     updateDocument(document.id, {
-      fields: document.fields.map(field =>
-        field.id === fieldId ? { ...field, value } : field
+      fields: document.fields.map(f =>
+        f.id === fieldId ? { ...f, value } : f
       )
     });
 
+    // Voice feedback for field completion
+    announceFieldComplete(field.type, field.type === 'signature' ? undefined : value);
+
     // Move to next field
     if (currentFieldIndex < signerFields.length - 1) {
-      setCurrentFieldIndex(currentFieldIndex + 1);
+      const nextIndex = currentFieldIndex + 1;
+      setCurrentFieldIndex(nextIndex);
+      
+      // Announce next field
+      setTimeout(() => {
+        const nextField = signerFields[nextIndex];
+        if (nextField) {
+          announceFieldFocus(nextField.type, nextField.label, nextField.required);
+        }
+      }, 1000);
+    } else {
+      // All fields completed
+      setTimeout(() => {
+        speak('All fields completed! You can now sign the document.', 'high');
+      }, 1000);
     }
 
     setShowSignaturePad(false);
@@ -67,6 +130,8 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
   };
 
   const handleSignDocument = () => {
+    announceWorkflowStep('Final Signing', 'Processing your document signature...');
+    
     // Mark signer as signed
     updateSigner(currentSigner.id, {
       status: 'signed',
@@ -83,18 +148,109 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
         status: 'completed',
         completedAt: new Date()
       });
+      announceSuccess('Document fully executed', 'All parties have signed the document successfully.');
+    } else {
+      announceSuccess('Your signature completed', 'The document will be sent to the next signer in sequence.');
     }
 
     onComplete();
   };
 
+  const handleFieldClick = (field: DocumentField) => {
+    if (field.signerId !== currentSigner.id && field.signerId) {
+      announceError('Access denied', 'This field is assigned to another signer and cannot be modified.');
+      return;
+    }
+
+    // Announce field interaction
+    announceFieldFocus(field.type, field.label, field.required);
+    
+    if (field.type === 'signature') {
+      setTimeout(() => {
+        speak('Opening signature pad. Use your mouse, finger, or stylus to create your signature. Press Save when complete, or Cancel to close.', 'normal');
+      }, 500);
+      setShowSignaturePad(true);
+    } else if (field.type === 'text' || field.type === 'date') {
+      setTimeout(() => {
+        const inputType = field.type === 'date' ? 'date picker' : 'text input';
+        speak(`Opening ${inputType}. Enter your ${field.label || field.type} and press Save to confirm.`, 'normal');
+      }, 500);
+      setShowTextInput(true);
+    } else if (field.type === 'checkbox') {
+      const newValue = field.value === 'true' ? 'false' : 'true';
+      handleFieldComplete(field.id, newValue);
+    } else if (field.type === 'dropdown' || field.type === 'radio') {
+      speak(`This is a ${field.type} field. Click to open the options and select your choice.`, 'normal');
+    }
+  };
+
+  const handleKeyboardNavigation = (e: React.KeyboardEvent) => {
+    if (!settings.enabled) return;
+
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'Tab':
+        e.preventDefault();
+        if (currentFieldIndex < signerFields.length - 1) {
+          const nextIndex = currentFieldIndex + 1;
+          setCurrentFieldIndex(nextIndex);
+          const nextField = signerFields[nextIndex];
+          announceFieldFocus(nextField.type, nextField.label, nextField.required);
+        } else {
+          speak('You have reached the last field.', 'normal');
+        }
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        if (currentFieldIndex > 0) {
+          const prevIndex = currentFieldIndex - 1;
+          setCurrentFieldIndex(prevIndex);
+          const prevField = signerFields[prevIndex];
+          announceFieldFocus(prevField.type, prevField.label, prevField.required);
+        } else {
+          speak('You are at the first field.', 'normal');
+        }
+        break;
+      case 'Enter':
+        e.preventDefault();
+        const currentField = signerFields[currentFieldIndex];
+        if (currentField) {
+          handleFieldClick(currentField);
+        }
+        break;
+      case 'h':
+      case 'H':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          provideContextualHelp();
+        }
+        break;
+    }
+  };
+
+  const provideContextualHelp = () => {
+    const canSign = completedFields.length === requiredFields.length;
+    const currentField = signerFields[currentFieldIndex];
+    
+    let helpMessage = `Document signing help. ${completedFields.length} of ${requiredFields.length} required fields are completed. `;
+    
+    if (canSign) {
+      helpMessage += 'All required fields are complete. You can now sign the document by clicking the Sign Document button.';
+    } else if (currentField) {
+      helpMessage += `Current field: ${currentField.type} ${currentField.label ? 'for ' + currentField.label : ''}. Press Enter to interact with this field.`;
+    }
+    
+    helpMessage += ' Use Tab or right arrow to move to the next field, left arrow for previous field. Press Ctrl+H for help at any time.';
+    
+    speak(helpMessage, 'high');
+  };
+
   const canSign = completedFields.length === requiredFields.length;
   const progressPercentage = (completedFields.length / Math.max(requiredFields.length, 1)) * 100;
-
   const currentField = signerFields[currentFieldIndex];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" onKeyDown={handleKeyboardNavigation} tabIndex={0}>
       {/* Progress Header */}
       <Card>
         <CardHeader>
@@ -116,6 +272,13 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
               <span className="text-sm">Signing as: {currentSigner.name}</span>
               <Badge variant="outline">{currentSigner.role}</Badge>
             </div>
+
+            {settings.enabled && (
+              <div className="flex items-center gap-2 text-blue-600 text-sm">
+                <HelpCircle className="h-4 w-4" />
+                <span>Voice guidance active. Press Ctrl+H for help, Tab to navigate fields.</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -126,11 +289,18 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-blue-800">
               <Clock className="h-4 w-4" />
-              <span className="font-medium">Next: {currentField.label || currentField.type}</span>
+              <span className="font-medium">Current: {currentField.label || currentField.type}</span>
+              {currentField.required && <Badge variant="outline" className="text-xs">Required</Badge>}
             </div>
             <p className="text-blue-700 text-sm mt-1">
-              Click on the highlighted field in the document to continue.
+              {currentField.tooltip || `Click on the highlighted ${currentField.type} field in the document to continue.`}
             </p>
+            {currentField.validation && (
+              <p className="text-blue-600 text-xs mt-1">
+                <AlertCircle className="h-3 w-3 inline mr-1" />
+                {currentField.validation.message || 'Please ensure the format is correct.'}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
@@ -144,13 +314,17 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
                 <CheckCircle className="h-4 w-4" />
                 <span className="font-medium">Ready to Sign</span>
               </div>
-              <Button onClick={handleSignDocument} className="bg-green-600 hover:bg-green-700">
+              <Button 
+                onClick={handleSignDocument} 
+                className="bg-green-600 hover:bg-green-700"
+                onFocus={() => speak('Sign document button focused. Press Enter or Space to sign the document.', 'normal')}
+              >
                 <Send className="h-4 w-4 mr-2" />
                 Sign Document
               </Button>
             </div>
             <p className="text-green-700 text-sm mt-1">
-              All required fields have been completed. Click to sign the document.
+              All required fields have been completed. Click to finalize your signature on this document.
             </p>
           </CardContent>
         </Card>
@@ -162,18 +336,7 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
           <PDFViewer
             pdfData={document.content}
             fields={document.fields}
-            onFieldClick={(field) => {
-              if (field.signerId !== currentSigner.id && field.signerId) return;
-              
-              if (field.type === 'signature') {
-                setShowSignaturePad(true);
-              } else if (field.type === 'text' || field.type === 'date') {
-                setShowTextInput(true);
-              } else if (field.type === 'checkbox') {
-                const newValue = field.value === 'true' ? 'false' : 'true';
-                handleFieldComplete(field.id, newValue);
-              }
-            }}
+            onFieldClick={handleFieldClick}
             signingMode={true}
           />
         </CardContent>
@@ -183,7 +346,10 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
       {showSignaturePad && currentField && (
         <SignaturePad
           onSave={(signature) => handleFieldComplete(currentField.id, signature)}
-          onCancel={() => setShowSignaturePad(false)}
+          onCancel={() => {
+            setShowSignaturePad(false);
+            speak('Signature cancelled. You can try again or move to the next field.', 'normal');
+          }}
         />
       )}
 
@@ -192,7 +358,10 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
           fieldType={currentField.type === 'date' ? 'date' : 'text'}
           currentValue={fieldValues[currentField.id] || ''}
           onSave={(value) => handleFieldComplete(currentField.id, value)}
-          onCancel={() => setShowTextInput(false)}
+          onCancel={() => {
+            setShowTextInput(false);
+            speak('Input cancelled. You can try again or move to the next field.', 'normal');
+          }}
         />
       )}
     </div>

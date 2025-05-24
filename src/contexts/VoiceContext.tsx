@@ -6,6 +6,9 @@ interface VoiceSettings {
   pitch: number;
   volume: number;
   enabled: boolean;
+  detailedGuidance: boolean;
+  contextualHelp: boolean;
+  fieldDescriptions: boolean;
 }
 
 interface VoiceContextType {
@@ -15,6 +18,18 @@ interface VoiceContextType {
   settings: VoiceSettings;
   updateSettings: (settings: Partial<VoiceSettings>) => void;
   repeatLastInstruction: () => void;
+  
+  // Enhanced voice training methods
+  announcePageChange: (pageName: string, description?: string) => void;
+  announceFieldFocus: (fieldType: string, label?: string, isRequired?: boolean) => void;
+  announceFieldComplete: (fieldType: string, value?: string) => void;
+  announceDocumentStatus: (status: string, details?: string) => void;
+  announceError: (error: string, suggestion?: string) => void;
+  announceSuccess: (action: string, details?: string) => void;
+  announceProgress: (current: number, total: number, action: string) => void;
+  announceWorkflowStep: (step: string, instructions: string) => void;
+  announceSignerUpdate: (signerName: string, action: string) => void;
+  announceDocumentMetrics: (metrics: { total: number; completed: number; pending: number }) => void;
 }
 
 const VoiceContext = createContext<VoiceContextType | undefined>(undefined);
@@ -29,7 +44,10 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       speed: 0.9,
       pitch: 1.0,
       volume: 0.8,
-      enabled: true
+      enabled: true,
+      detailedGuidance: true,
+      contextualHelp: true,
+      fieldDescriptions: true,
     };
   });
   
@@ -74,7 +92,8 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           name.includes('susan') ||
           name.includes('female') ||
           name.includes('zira') ||
-          name.includes('hazel')
+          name.includes('hazel') ||
+          name.includes('aria')
         )
       );
     });
@@ -180,6 +199,104 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  // Enhanced voice training methods
+  const announcePageChange = (pageName: string, description?: string) => {
+    if (!settings.enabled) return;
+    
+    let message = `Navigated to ${pageName}`;
+    if (description && settings.detailedGuidance) {
+      message += `. ${description}`;
+    }
+    speak(message, 'high');
+  };
+
+  const announceFieldFocus = (fieldType: string, label?: string, isRequired?: boolean) => {
+    if (!settings.enabled || !settings.fieldDescriptions) return;
+    
+    let message = `${fieldType} field`;
+    if (label) {
+      message += ` for ${label}`;
+    }
+    if (isRequired) {
+      message += '. This field is required';
+    }
+    message += '. Click to edit or press Tab to move to the next field.';
+    
+    speak(message, 'normal');
+  };
+
+  const announceFieldComplete = (fieldType: string, value?: string) => {
+    if (!settings.enabled) return;
+    
+    let message = `${fieldType} field completed`;
+    if (value && settings.detailedGuidance && fieldType !== 'signature') {
+      message += ` with value: ${value}`;
+    }
+    speak(message, 'normal');
+  };
+
+  const announceDocumentStatus = (status: string, details?: string) => {
+    if (!settings.enabled) return;
+    
+    let message = `Document status: ${status}`;
+    if (details && settings.detailedGuidance) {
+      message += `. ${details}`;
+    }
+    speak(message, 'normal');
+  };
+
+  const announceError = (error: string, suggestion?: string) => {
+    if (!settings.enabled) return;
+    
+    let message = `Error: ${error}`;
+    if (suggestion && settings.contextualHelp) {
+      message += `. ${suggestion}`;
+    }
+    speak(message, 'high');
+  };
+
+  const announceSuccess = (action: string, details?: string) => {
+    if (!settings.enabled) return;
+    
+    let message = `Success! ${action}`;
+    if (details && settings.detailedGuidance) {
+      message += `. ${details}`;
+    }
+    speak(message, 'high');
+  };
+
+  const announceProgress = (current: number, total: number, action: string) => {
+    if (!settings.enabled) return;
+    
+    const percentage = Math.round((current / total) * 100);
+    const message = `${action} progress: ${current} of ${total} completed. ${percentage} percent done.`;
+    speak(message, 'normal');
+  };
+
+  const announceWorkflowStep = (step: string, instructions: string) => {
+    if (!settings.enabled) return;
+    
+    let message = `Workflow step: ${step}`;
+    if (instructions && settings.detailedGuidance) {
+      message += `. ${instructions}`;
+    }
+    speak(message, 'normal');
+  };
+
+  const announceSignerUpdate = (signerName: string, action: string) => {
+    if (!settings.enabled) return;
+    
+    const message = `Signer update: ${signerName} has ${action} the document.`;
+    speak(message, 'normal');
+  };
+
+  const announceDocumentMetrics = (metrics: { total: number; completed: number; pending: number }) => {
+    if (!settings.enabled || !settings.detailedGuidance) return;
+    
+    const message = `Document overview: ${metrics.total} total documents, ${metrics.completed} completed, ${metrics.pending} pending signatures.`;
+    speak(message, 'normal');
+  };
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -194,7 +311,17 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       isPlaying,
       settings,
       updateSettings,
-      repeatLastInstruction
+      repeatLastInstruction,
+      announcePageChange,
+      announceFieldFocus,
+      announceFieldComplete,
+      announceDocumentStatus,
+      announceError,
+      announceSuccess,
+      announceProgress,
+      announceWorkflowStep,
+      announceSignerUpdate,
+      announceDocumentMetrics,
     }}>
       {children}
     </VoiceContext.Provider>
