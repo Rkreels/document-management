@@ -5,11 +5,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Plus, Save, Trash2, Edit, Users } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Plus, Save, Trash2, FileText, Users, Settings, Bell, BarChart3 } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 import { useVoice } from '@/contexts/VoiceContext';
 import { useDocument, DocumentField, Signer } from '@/contexts/DocumentContext';
+import { PDFViewer } from '@/components/PDFViewer';
+import { AdvancedFieldEditor } from '@/components/AdvancedFieldEditor';
+import { WorkflowManager } from '@/components/WorkflowManager';
+import { NotificationCenter } from '@/components/NotificationCenter';
+import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 
 const DocumentEditor = () => {
   const { documentId } = useParams();
@@ -21,8 +27,8 @@ const DocumentEditor = () => {
   const [content, setContent] = useState('');
   const [selectedFieldType, setSelectedFieldType] = useState<string>('');
   const [selectedSigner, setSelectedSigner] = useState<string | undefined>(undefined);
-  const [signerName, setSignerName] = useState('');
-  const [signerEmail, setSignerEmail] = useState('');
+  const [editingField, setEditingField] = useState<DocumentField | null>(null);
+  const [activeTab, setActiveTab] = useState('document');
 
   useEffect(() => {
     stop();
@@ -33,7 +39,7 @@ const DocumentEditor = () => {
         document.setCurrentDocument(currentDocument);
         setTitle(currentDocument.title);
         setContent(currentDocument.content);
-        speak(`Editing ${currentDocument.title}. You can modify the title, fields, and signers.`, 'normal');
+        speak(`Editing ${currentDocument.title}. You now have access to advanced features including workflow management, analytics, and notifications.`, 'normal');
       } else {
         speak("Document not found. Taking you back to the dashboard.", 'high');
         setTimeout(() => navigate('/dashboard'), 2000);
@@ -42,7 +48,7 @@ const DocumentEditor = () => {
       document.setCurrentDocument(null);
       setTitle('');
       setContent('');
-      speak("Creating a new document. Enter the title and upload a PDF to get started.", 'normal');
+      speak("Creating a new document with advanced features. Set up the document, add fields, configure workflow, and manage notifications.", 'normal');
     }
 
     return () => stop();
@@ -64,7 +70,7 @@ const DocumentEditor = () => {
     if (file) {
       const reader = new FileReader();
       reader.onload = (event: any) => {
-        setContent(event.target.result.split(',')[1]); // Extract base64 data
+        setContent(event.target.result.split(',')[1]);
       };
       reader.readAsDataURL(file);
     }
@@ -95,19 +101,21 @@ const DocumentEditor = () => {
         title: "Success",
         description: "Document created successfully.",
       });
-      speak("Document created successfully! Taking you to the editor.", 'high');
+      speak("Document created successfully! You can now configure advanced features.", 'high');
     }
   };
 
   const handleDelete = () => {
     if (documentId && document.currentDocument) {
-      document.deleteDocument(documentId);
-      navigate('/dashboard');
-      toast({
-        title: "Success",
-        description: "Document deleted successfully.",
-      });
-      speak("Document deleted successfully! Taking you back to the dashboard.", 'high');
+      if (confirm(`Are you sure you want to delete "${document.currentDocument.title}"?`)) {
+        document.deleteDocument(documentId);
+        navigate('/dashboard');
+        toast({
+          title: "Success",
+          description: "Document deleted successfully.",
+        });
+        speak("Document deleted successfully! Taking you back to the dashboard.", 'high');
+      }
     }
   };
 
@@ -115,46 +123,52 @@ const DocumentEditor = () => {
     if (!selectedFieldType || !document.currentDocument) return;
     
     const newField: Omit<DocumentField, 'id'> = {
-      type: selectedFieldType as 'signature' | 'text' | 'date' | 'checkbox',
+      type: selectedFieldType as DocumentField['type'],
       x: 10,
       y: 10,
       width: 15,
       height: 6,
       signerId: selectedSigner || undefined,
       required: true,
+      label: `${selectedFieldType} field`,
     };
     
     document.addField(newField);
     setSelectedFieldType('');
-    speak(`${newField.type} field added. You can now drag it to position.`, 'normal');
+    speak(`${newField.type} field added. Click on it to configure advanced properties.`, 'normal');
   };
 
-  const addSigner = () => {
-    if (signerName && signerEmail) {
-      document.addSigner({
-        name: signerName,
-        email: signerEmail,
-        role: 'signer',
-        status: 'pending' // Add the missing required status property
-      });
-      setSignerName('');
-      setSignerEmail('');
+  const handleFieldClick = (field: DocumentField) => {
+    setEditingField(field);
+  };
+
+  const handleFieldUpdate = (updates: Partial<DocumentField>) => {
+    if (editingField) {
+      document.updateField(editingField.id, updates);
+      setEditingField(null);
     }
   };
 
-  const handleRemoveSigner = (signerId: string) => {
-    document.removeSigner(signerId);
-    speak("Signer removed.", 'normal');
+  const handleFieldDelete = () => {
+    if (editingField) {
+      document.removeField(editingField.id);
+      setEditingField(null);
+    }
   };
 
-  const handleFieldTypeChange = (value: string) => {
-    setSelectedFieldType(value);
-    speak(`Selected field type: ${value}`, 'normal');
-  };
-
-  const handleSignerChange = (value: string) => {
-    setSelectedSigner(value);
-    speak(`Selected signer: ${value}`, 'normal');
+  const getTabIcon = (tab: string) => {
+    switch (tab) {
+      case 'document':
+        return <FileText className="h-4 w-4" />;
+      case 'workflow':
+        return <Users className="h-4 w-4" />;
+      case 'notifications':
+        return <Bell className="h-4 w-4" />;
+      case 'analytics':
+        return <BarChart3 className="h-4 w-4" />;
+      default:
+        return <Settings className="h-4 w-4" />;
+    }
   };
 
   return (
@@ -166,7 +180,19 @@ const DocumentEditor = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
-          <h1 className="text-2xl font-bold">{documentId ? 'Edit Document' : 'Create Document'}</h1>
+          <div>
+            <h1 className="text-2xl font-bold">
+              {documentId ? 'Edit Document' : 'Create Document'}
+            </h1>
+            {document.currentDocument && (
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="outline">{document.currentDocument.status}</Badge>
+                <Badge variant="secondary">
+                  {document.currentDocument.signingOrder} signing
+                </Badge>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex gap-2">
           <Button onClick={handleSave}>
@@ -182,105 +208,148 @@ const DocumentEditor = () => {
         </div>
       </div>
 
-      {/* Document Details */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Document Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="title">Title</Label>
-            <Input type="text" id="title" value={title} onChange={handleTitleChange} />
-          </div>
-          <div>
-            <Label htmlFor="content">Upload PDF</Label>
-            <Input type="file" id="content" accept=".pdf" onChange={handleContentChange} />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="document" className="flex items-center gap-2">
+            {getTabIcon('document')}
+            Document
+          </TabsTrigger>
+          <TabsTrigger value="workflow" className="flex items-center gap-2" disabled={!document.currentDocument}>
+            {getTabIcon('workflow')}
+            Workflow
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2" disabled={!document.currentDocument}>
+            {getTabIcon('notifications')}
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            {getTabIcon('analytics')}
+            Analytics
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Signers */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Signers</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <Input
-              type="text"
-              placeholder="Signer Name"
-              value={signerName}
-              onChange={(e) => setSignerName(e.target.value)}
-            />
-            <Input
-              type="email"
-              placeholder="Signer Email"
-              value={signerEmail}
-              onChange={(e) => setSignerEmail(e.target.value)}
-            />
-          </div>
-          <Button variant="secondary" onClick={addSigner}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Signer
-          </Button>
-          <Separator className="my-4" />
-          {document.currentDocument?.signers.map((signer) => (
-            <div key={signer.id} className="flex items-center justify-between p-3 border rounded-lg">
+        {/* Document Tab */}
+        <TabsContent value="document" className="space-y-6">
+          {/* Document Details */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Document Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div>
-                <p className="font-medium">{signer.name}</p>
-                <p className="text-sm text-gray-600">{signer.email}</p>
+                <Label htmlFor="title">Title</Label>
+                <Input type="text" id="title" value={title} onChange={handleTitleChange} />
               </div>
-              <Button variant="ghost" size="icon" onClick={() => handleRemoveSigner(signer.id)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+              <div>
+                <Label htmlFor="content">Upload PDF</Label>
+                <Input type="file" id="content" accept=".pdf" onChange={handleContentChange} />
+                {content && (
+                  <p className="text-sm text-green-600 mt-1">PDF uploaded successfully</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Fields */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Fields</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="fieldType">Field Type</Label>
-              <Select onValueChange={handleFieldTypeChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a field type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="signature">Signature</SelectItem>
-                  <SelectItem value="text">Text</SelectItem>
-                  <SelectItem value="date">Date</SelectItem>
-                  <SelectItem value="checkbox">Checkbox</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="signer">Assign to Signer (Optional)</Label>
-              <Select onValueChange={handleSignerChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a signer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {document.currentDocument?.signers.map((signer) => (
-                    <SelectItem key={signer.id} value={signer.id}>
-                      {signer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <Button variant="secondary" onClick={handleAddField}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Field
-          </Button>
-        </CardContent>
-      </Card>
+          {/* Field Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Add Fields</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="fieldType">Field Type</Label>
+                  <Select onValueChange={setSelectedFieldType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a field type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="signature">Signature</SelectItem>
+                      <SelectItem value="text">Text</SelectItem>
+                      <SelectItem value="date">Date</SelectItem>
+                      <SelectItem value="checkbox">Checkbox</SelectItem>
+                      <SelectItem value="radio">Radio Button Group</SelectItem>
+                      <SelectItem value="dropdown">Dropdown</SelectItem>
+                      <SelectItem value="formula">Formula</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="signer">Assign to Signer (Optional)</Label>
+                  <Select onValueChange={setSelectedSigner}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a signer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {document.currentDocument?.signers.map((signer) => (
+                        <SelectItem key={signer.id} value={signer.id}>
+                          {signer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <Button 
+                variant="secondary" 
+                onClick={handleAddField}
+                disabled={!selectedFieldType}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Field
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* PDF Preview */}
+          {content && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Document Preview</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <PDFViewer
+                  pdfData={content}
+                  fields={document.currentDocument?.fields || []}
+                  onFieldClick={handleFieldClick}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Workflow Tab */}
+        <TabsContent value="workflow">
+          {document.currentDocument && (
+            <WorkflowManager document={document.currentDocument} />
+          )}
+        </TabsContent>
+
+        {/* Notifications Tab */}
+        <TabsContent value="notifications">
+          {document.currentDocument && (
+            <NotificationCenter document={document.currentDocument} />
+          )}
+        </TabsContent>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics">
+          <AnalyticsDashboard />
+        </TabsContent>
+      </Tabs>
+
+      {/* Advanced Field Editor Modal */}
+      {editingField && (
+        <AdvancedFieldEditor
+          field={editingField}
+          signers={document.currentDocument?.signers || []}
+          allFields={document.currentDocument?.fields || []}
+          onUpdate={handleFieldUpdate}
+          onDelete={handleFieldDelete}
+          onClose={() => setEditingField(null)}
+        />
+      )}
     </div>
   );
 };
