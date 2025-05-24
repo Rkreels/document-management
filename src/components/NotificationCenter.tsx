@@ -107,7 +107,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ document
                 <>
                   <div>
                     <Label>Reminder Frequency</Label>
-                    <Select value={reminderFrequency} onValueChange={setReminderFrequency}>
+                    <Select value={reminderFrequency} onValueChange={(value: string) => setReminderFrequency(value as 'daily' | 'weekly')}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>

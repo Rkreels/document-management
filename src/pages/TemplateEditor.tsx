@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -78,6 +77,8 @@ const TemplateEditor = () => {
       tags: tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : undefined,
       fields: currentTemplate?.fields || [],
       signers: currentTemplate?.signers || [],
+      isPublic: false,
+      usageCount: 0,
     };
 
     if (templateId && currentTemplate) {

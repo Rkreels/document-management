@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -175,7 +176,7 @@ export const WorkflowManager: React.FC<WorkflowManagerProps> = ({ document }) =>
                 value={newSignerEmail}
                 onChange={(e) => setNewSignerEmail(e.target.value)}
               />
-              <Select value={newSignerRole} onValueChange={setNewSignerRole}>
+              <Select value={newSignerRole} onValueChange={(value: string) => setNewSignerRole(value as 'signer' | 'viewer' | 'approver' | 'cc')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -270,8 +271,8 @@ export const WorkflowManager: React.FC<WorkflowManagerProps> = ({ document }) =>
                       <Label>Authentication</Label>
                       <Select 
                         value={signer.requireAuth || 'none'} 
-                        onValueChange={(value: 'none' | 'email' | 'sms' | 'knowledge') => 
-                          setSignerAuth(signer.id, value)
+                        onValueChange={(value: string) => 
+                          setSignerAuth(signer.id, value as 'none' | 'email' | 'sms' | 'knowledge')
                         }
                         disabled={document.status !== 'draft'}
                       >
