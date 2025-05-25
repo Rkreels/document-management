@@ -88,6 +88,13 @@ interface DocumentContextType {
   markNotificationAsRead: (id: string) => void;
   clearNotifications: () => void;
   uploadPDFToDocument: (documentId: string, base64Data: string, fileName: string) => void;
+  getDocumentStats: () => {
+    total: number;
+    completed: number;
+    pending: number;
+    draft: number;
+    averageCompletionTime: number;
+  };
 }
 
 export const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -608,7 +615,34 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('notifications', JSON.stringify([]));
   };
 
-  const value = {
+  const getDocumentStats = () => {
+    const total = documents.length;
+    const completed = documents.filter(doc => doc.status === 'completed').length;
+    const pending = documents.filter(doc => doc.status === 'sent').length;
+    const draft = documents.filter(doc => doc.status === 'draft').length;
+    
+    // Calculate average completion time
+    const completedDocs = documents.filter(doc => doc.status === 'completed');
+    let averageCompletionTime = 0;
+    
+    if (completedDocs.length > 0) {
+      const totalTime = completedDocs.reduce((sum, doc) => {
+        const timeDiff = doc.updatedAt.getTime() - doc.createdAt.getTime();
+        return sum + (timeDiff / (1000 * 60 * 60 * 24)); // Convert to days
+      }, 0);
+      averageCompletionTime = totalTime / completedDocs.length;
+    }
+
+    return {
+      total,
+      completed,
+      pending,
+      draft,
+      averageCompletionTime
+    };
+  };
+
+  const value: DocumentContextType = {
     documents,
     currentDocument,
     templates,
@@ -631,7 +665,8 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     addNotification,
     markNotificationAsRead,
     clearNotifications,
-    uploadPDFToDocument, // Add the new function to context
+    uploadPDFToDocument,
+    getDocumentStats,
   };
 
   return (
