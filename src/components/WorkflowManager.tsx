@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,7 +66,7 @@ export const WorkflowManager: React.FC<WorkflowManagerProps> = ({ document }) =>
 
   const handleAddSigner = () => {
     if (newSignerName && newSignerEmail) {
-      addSigner({
+      addSigner(document.id, {
         name: newSignerName,
         email: newSignerEmail,
         role: newSignerRole,
@@ -81,11 +80,11 @@ export const WorkflowManager: React.FC<WorkflowManagerProps> = ({ document }) =>
   };
 
   const toggleSignerDelegation = (signerId: string, canDelegate: boolean) => {
-    updateSigner(signerId, { canDelegate });
+    updateSigner(document.id, signerId, { canDelegate });
   };
 
   const setSignerAuth = (signerId: string, requireAuth: 'none' | 'email' | 'sms' | 'knowledge') => {
-    updateSigner(signerId, { requireAuth });
+    updateSigner(document.id, signerId, { requireAuth });
   };
 
   const getStatusIcon = (status: string) => {
@@ -248,7 +247,7 @@ export const WorkflowManager: React.FC<WorkflowManagerProps> = ({ document }) =>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => sendReminder(document.id, signer.id)}
+                          onClick={() => sendReminder(document.id)}
                         >
                           Send Reminder
                         </Button>
