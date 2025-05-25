@@ -1,13 +1,23 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, RotateCw, Download } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCw, Download, RefreshCw } from 'lucide-react';
 import { DocumentField } from '@/contexts/DocumentContext';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Set up the PDF.js worker
-const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+// Set up the PDF.js worker with fallback
+const setupPDFWorker = () => {
+  try {
+    const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+    console.log('PDF.js worker configured successfully');
+  } catch (error) {
+    console.error('PDF.js worker setup failed:', error);
+  }
+};
+
+setupPDFWorker();
 
 interface PDFViewerProps {
   pdfData: string;
@@ -27,97 +37,130 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   const renderTaskRef = useRef<any>(null);
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pdfDocument, setPdfDocument] = useState<any>(null);
 
-  useEffect(() => {
-    const renderPDF = async () => {
-      if (!pdfData) {
-        setError('No PDF data provided');
-        setIsLoading(false);
-        return;
+  const loadPDF = async () => {
+    if (!pdfData) {
+      setError('No PDF data provided');
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log('Loading PDF with data length:', pdfData.length);
+      
+      // Cancel any ongoing render task
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+        renderTaskRef.current = null;
       }
 
-      setIsLoading(true);
-      setError(null);
-
+      // Decode base64 with better error handling
+      let uint8Array: Uint8Array;
       try {
-        // Cancel any ongoing render task
-        if (renderTaskRef.current) {
-          renderTaskRef.current.cancel();
-          renderTaskRef.current = null;
-        }
-
-        console.log('Rendering PDF with data length:', pdfData.length);
-        
-        // Decode base64
         const decodedPdfData = atob(pdfData);
-        
-        // Convert decoded data to Uint8Array
-        const uint8Array = new Uint8Array(decodedPdfData.length);
+        uint8Array = new Uint8Array(decodedPdfData.length);
         for (let i = 0; i < decodedPdfData.length; i++) {
           uint8Array[i] = decodedPdfData.charCodeAt(i);
         }
-
-        console.log('Decoded PDF data size:', uint8Array.length);
-
-        const pdf = await pdfjsLib.getDocument(uint8Array).promise;
-        console.log('PDF loaded successfully, pages:', pdf.numPages);
-        
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: zoom, rotation });
-        
-        const canvas = canvasRef.current;
-        if (!canvas) {
-          console.error('Canvas ref not available');
-          return;
-        }
-
-        const context = canvas.getContext('2d');
-        if (!context) {
-          console.error('Canvas context not available');
-          return;
-        }
-
-        // Clear the canvas before rendering
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        const renderContext = {
-          canvasContext: context,
-          viewport: viewport
-        };
-
-        // Store the render task reference
-        renderTaskRef.current = page.render(renderContext);
-        await renderTaskRef.current.promise;
-        
-        console.log('PDF rendered successfully');
-        renderTaskRef.current = null;
-      } catch (err: any) {
-        if (err.name === 'RenderingCancelledException') {
-          console.log('PDF rendering was cancelled');
-          return;
-        }
-        console.error("Error rendering PDF:", err);
-        setError(`Error rendering PDF: ${err.message || 'Unknown error'}`);
-      } finally {
-        setIsLoading(false);
+        console.log('PDF data decoded successfully, size:', uint8Array.length);
+      } catch (decodeError) {
+        console.error('Error decoding base64 PDF data:', decodeError);
+        setError('Invalid PDF data format. Please upload a valid PDF file.');
+        return;
       }
-    };
 
-    renderPDF();
+      // Load PDF document
+      const loadingTask = pdfjsLib.getDocument({
+        data: uint8Array,
+        cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+        cMapPacked: true,
+      });
 
-    // Cleanup function to cancel render task on unmount or dependency change
+      const pdf = await loadingTask.promise;
+      console.log('PDF loaded successfully, pages:', pdf.numPages);
+      
+      setPdfDocument(pdf);
+      setTotalPages(pdf.numPages);
+      setCurrentPage(1);
+    } catch (err: any) {
+      console.error("Error loading PDF:", err);
+      if (err.name === 'InvalidPDFException') {
+        setError('Invalid PDF file. Please upload a valid PDF document.');
+      } else if (err.name === 'MissingPDFException') {
+        setError('PDF file is missing or corrupted. Please try uploading again.');
+      } else {
+        setError(`Error loading PDF: ${err.message || 'Unknown error'}`);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const renderPage = async () => {
+    if (!pdfDocument || !canvasRef.current) return;
+
+    try {
+      const page = await pdfDocument.getPage(currentPage);
+      const viewport = page.getViewport({ scale: zoom, rotation });
+      
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      
+      if (!context) {
+        console.error('Canvas context not available');
+        return;
+      }
+
+      // Clear and resize canvas
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport
+      };
+
+      // Store the render task reference
+      renderTaskRef.current = page.render(renderContext);
+      await renderTaskRef.current.promise;
+      
+      console.log('Page rendered successfully');
+      renderTaskRef.current = null;
+    } catch (err: any) {
+      if (err.name === 'RenderingCancelledException') {
+        console.log('PDF rendering was cancelled');
+        return;
+      }
+      console.error("Error rendering page:", err);
+      setError(`Error rendering page: ${err.message || 'Unknown error'}`);
+    }
+  };
+
+  useEffect(() => {
+    loadPDF();
+    
     return () => {
       if (renderTaskRef.current) {
         renderTaskRef.current.cancel();
         renderTaskRef.current = null;
       }
     };
-  }, [pdfData, zoom, rotation]);
+  }, [pdfData]);
+
+  useEffect(() => {
+    if (pdfDocument) {
+      renderPage();
+    }
+  }, [pdfDocument, currentPage, zoom, rotation]);
 
   const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
     if (!signingMode || !onFieldClick || !canvasRef.current) return;
@@ -129,6 +172,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
 
     // Find the field that was clicked
     const clickedField = fields.find(field => {
+      if (field.page !== currentPage) return false;
       const fieldRight = field.x + field.width;
       const fieldBottom = field.y + field.height;
       return x >= field.x && x <= fieldRight && y >= field.y && y <= fieldBottom;
@@ -142,51 +186,59 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   const renderFields = () => {
     if (!canvasRef.current) return null;
 
-    return fields.map(field => {
-      const style: React.CSSProperties = {
-        position: 'absolute',
-        left: `${field.x}%`,
-        top: `${field.y}%`,
-        width: `${field.width}%`,
-        height: `${field.height}%`,
-        border: signingMode ? '2px solid #3b82f6' : '2px dashed #6b7280',
-        backgroundColor: signingMode ? 'rgba(59, 130, 246, 0.1)' : 'rgba(107, 114, 128, 0.1)',
-        cursor: signingMode ? 'pointer' : 'default',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '12px',
-        color: signingMode ? '#1e40af' : '#374151',
-        fontWeight: '500',
-        pointerEvents: signingMode ? 'auto' : 'none',
-        transition: 'all 0.2s ease'
-      };
+    return fields
+      .filter(field => field.page === currentPage)
+      .map(field => {
+        const style: React.CSSProperties = {
+          position: 'absolute',
+          left: `${field.x}%`,
+          top: `${field.y}%`,
+          width: `${field.width}%`,
+          height: `${field.height}%`,
+          border: signingMode ? '2px solid #3b82f6' : '2px dashed #6b7280',
+          backgroundColor: signingMode ? 'rgba(59, 130, 246, 0.1)' : 'rgba(107, 114, 128, 0.1)',
+          cursor: signingMode ? 'pointer' : 'default',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '12px',
+          color: signingMode ? '#1e40af' : '#374151',
+          fontWeight: '500',
+          pointerEvents: signingMode ? 'auto' : 'none',
+          transition: 'all 0.2s ease',
+          zIndex: 10
+        };
 
-      const getFieldContent = () => {
-        if (field.value) {
-          if (field.type === 'signature') {
-            return '✓ Signed';
-          } else if (field.type === 'checkbox') {
-            return field.value === 'true' ? '☑' : '☐';
-          } else {
-            return field.value.toString().substring(0, 20) + (field.value.toString().length > 20 ? '...' : '');
+        const getFieldContent = () => {
+          if (field.value) {
+            if (field.type === 'signature') {
+              return '✓ Signed';
+            } else if (field.type === 'checkbox') {
+              return field.value === 'true' ? '☑' : '☐';
+            } else {
+              return field.value.toString().substring(0, 20) + (field.value.toString().length > 20 ? '...' : '');
+            }
           }
-        }
-        return field.label || field.type.charAt(0).toUpperCase() + field.type.slice(1);
-      };
+          return field.label || field.type.charAt(0).toUpperCase() + field.type.slice(1);
+        };
 
-      return (
-        <div
-          key={field.id}
-          style={style}
-          onClick={() => signingMode && onFieldClick && onFieldClick(field)}
-          className={signingMode ? 'hover:bg-blue-200 hover:border-blue-400' : ''}
-          title={field.label || field.type}
-        >
-          {getFieldContent()}
-        </div>
-      );
-    });
+        return (
+          <div
+            key={field.id}
+            style={style}
+            onClick={() => signingMode && onFieldClick && onFieldClick(field)}
+            className={signingMode ? 'hover:bg-blue-200 hover:border-blue-400' : ''}
+            title={field.label || field.type}
+          >
+            {getFieldContent()}
+          </div>
+        );
+      });
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    loadPDF();
   };
 
   if (error) {
@@ -194,12 +246,15 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
       <Card className="p-8 text-center">
         <CardContent>
           <p className="text-red-600 mb-4">{error}</p>
-          <p className="text-sm text-gray-600 mb-4">
-            Make sure you've uploaded a valid PDF file or try loading the sample PDF.
-          </p>
-          <Button onClick={() => window.location.reload()}>
-            Reload Page
-          </Button>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={handleRetry} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+            <Button onClick={() => window.location.reload()}>
+              Reload Page
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -214,7 +269,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
-            disabled={zoom <= 0.5}
+            disabled={zoom <= 0.5 || isLoading}
           >
             <ZoomOut className="h-4 w-4" />
           </Button>
@@ -222,21 +277,45 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setZoom(Math.min(2, zoom + 0.1))}
-            disabled={zoom >= 2}
+            onClick={() => setZoom(Math.min(3, zoom + 0.1))}
+            disabled={zoom >= 3 || isLoading}
           >
             <ZoomIn className="h-4 w-4" />
           </Button>
         </div>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1 || isLoading}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages || isLoading}
+          >
+            Next
+          </Button>
+        </div>
+
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setRotation((rotation + 90) % 360)}
+            disabled={isLoading}
           >
             <RotateCw className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" disabled={isLoading}>
             <Download className="h-4 w-4" />
           </Button>
         </div>
@@ -249,7 +328,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
         style={{ height: '600px' }}
       >
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">
+          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-20">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
               <p className="text-sm text-gray-600">Loading PDF...</p>

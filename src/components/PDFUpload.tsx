@@ -18,6 +18,10 @@ export const PDFUpload: React.FC<PDFUploadProps> = ({ onPDFUpload, className }) 
     const file = event.target.files?.[0];
     if (!file) return;
 
+    await processFile(file);
+  };
+
+  const processFile = async (file: File) => {
     // Validate file type
     if (file.type !== 'application/pdf') {
       toast({
@@ -78,22 +82,13 @@ export const PDFUpload: React.FC<PDFUploadProps> = ({ onPDFUpload, className }) 
     }
   };
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const files = Array.from(event.dataTransfer.files);
     const pdfFile = files.find(file => file.type === 'application/pdf');
     
     if (pdfFile) {
-      // Trigger the file handler directly with the File object
-      const input = fileInputRef.current;
-      if (input) {
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(pdfFile);
-        input.files = dataTransfer.files;
-        
-        const event = new Event('change', { bubbles: true });
-        input.dispatchEvent(event);
-      }
+      await processFile(pdfFile);
     } else {
       toast({
         title: 'Invalid File Type',
