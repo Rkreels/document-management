@@ -127,7 +127,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({
             <div>
               <Label>Default Value</Label>
               <Input
-                value={localField.value || ''}
+                value={typeof localField.value === 'string' ? localField.value : ''}
                 onChange={(e) => updateField({ value: e.target.value })}
                 placeholder="Enter default text"
               />

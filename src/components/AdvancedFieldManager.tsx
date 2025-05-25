@@ -64,6 +64,7 @@ export const AdvancedFieldManager: React.FC<AdvancedFieldManagerProps> = ({
       y: Math.random() * 70 + 10,
       width: selectedFieldType === 'signature' ? 25 : 15,
       height: selectedFieldType === 'textarea' ? 12 : 6,
+      page: 1,
       signerId: selectedSigner || undefined,
       required: true,
       label: fieldType?.label || selectedFieldType,

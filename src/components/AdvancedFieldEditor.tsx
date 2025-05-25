@@ -201,7 +201,7 @@ export const AdvancedFieldEditor: React.FC<AdvancedFieldEditorProps> = ({
             <div>
               <Label>Default Value</Label>
               <Input
-                value={localField.value || ''}
+                value={typeof localField.value === 'string' ? localField.value : ''}
                 onChange={(e) => updateField({ value: e.target.value })}
                 placeholder="Enter default value"
                 type={localField.type === 'date' ? 'date' : 'text'}
@@ -246,14 +246,14 @@ export const AdvancedFieldEditor: React.FC<AdvancedFieldEditorProps> = ({
                   placeholder="Regular expression pattern"
                   value={localField.validation.pattern || ''}
                   onChange={(e) => updateField({ 
-                    validation: { ...localField.validation, pattern: e.target.value }
+                    validation: { ...localField.validation!, pattern: e.target.value }
                   })}
                 />
                 <Input
                   placeholder="Validation error message"
                   value={localField.validation.message || ''}
                   onChange={(e) => updateField({ 
-                    validation: { ...localField.validation, message: e.target.value }
+                    validation: { ...localField.validation!, message: e.target.value }
                   })}
                 />
               </>

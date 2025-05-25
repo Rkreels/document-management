@@ -1,5 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+export interface ValidationRule {
+  type: 'email' | 'phone' | 'number' | 'custom';
+  pattern?: string;
+  message?: string;
+}
+
+export interface ConditionalLogic {
+  dependsOn: string;
+  condition: 'equals' | 'not_equals' | 'contains';
+  value: string;
+  action: 'show' | 'hide' | 'require';
+}
+
 export interface DocumentField {
   id: string;
   type: string;
@@ -12,6 +25,12 @@ export interface DocumentField {
   label?: string;
   required?: boolean;
   signer?: string;
+  signerId?: string;
+  options?: string[];
+  formula?: string;
+  validation?: ValidationRule;
+  conditionalLogic?: ConditionalLogic;
+  tooltip?: string;
 }
 
 export interface Signer {
@@ -34,6 +53,9 @@ export interface Document {
   auditTrail: AuditEvent[];
   fields: DocumentField[];
   signers: Signer[];
+  expiresAt?: Date;
+  completedAt?: Date;
+  reminderSchedule?: string;
 }
 
 export interface AuditEvent {
@@ -52,6 +74,9 @@ export interface DocumentTemplate {
   fields: DocumentField[];
   createdAt: Date;
   updatedAt: Date;
+  usageCount?: number;
+  name?: string;
+  category?: string;
 }
 
 export interface Notification {
@@ -95,6 +120,9 @@ interface DocumentContextType {
     draft: number;
     averageCompletionTime: number;
   };
+  duplicateDocument?: (documentId: string) => void;
+  sendReminder?: (documentId: string, signerId: string) => void;
+  createNotification?: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
 }
 
 export const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -697,7 +725,8 @@ export const sampleDocument: Document = {
       page: 1,
       required: true,
       label: 'Signature',
-      signer: 'signer-1'
+      signer: 'signer-1',
+      signerId: 'signer-1'
     },
     {
       id: 'field-2',
@@ -709,7 +738,8 @@ export const sampleDocument: Document = {
       page: 1,
       required: true,
       label: 'Full Name',
-      signer: 'signer-1'
+      signer: 'signer-1',
+      signerId: 'signer-1'
     },
     {
       id: 'field-3',
@@ -721,7 +751,8 @@ export const sampleDocument: Document = {
       page: 1,
       required: true,
       label: 'Date',
-      signer: 'signer-1'
+      signer: 'signer-1',
+      signerId: 'signer-1'
     }
   ],
   signers: [
