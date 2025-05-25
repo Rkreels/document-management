@@ -25,10 +25,12 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/editor" element={<DocumentEditor />} />
               <Route path="/editor/:documentId" element={<DocumentEditor />} />
               <Route path="/preview/:documentId" element={<DocumentPreview />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/templates" element={<Templates />} />
+              <Route path="/template-editor" element={<TemplateEditor />} />
               <Route path="/template-editor/:templateId" element={<TemplateEditor />} />
               <Route path="/signing/:documentId/:signerId" element={<SigningPage />} />
               <Route path="/voice-training" element={<VoiceTrainingPage />} />

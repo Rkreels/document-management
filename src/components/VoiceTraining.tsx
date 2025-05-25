@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,7 +51,7 @@ interface TrainingLesson {
 
 interface TrainingAction {
   type: 'speak' | 'wait' | 'highlight' | 'navigate' | 'interact';
-  payload: any;
+  payload?: any;
   duration?: number;
 }
 
