@@ -70,10 +70,19 @@ const DocumentEditor = () => {
     if (file) {
       const reader = new FileReader();
       reader.onload = (event: any) => {
-        setContent(event.target.result.split(',')[1]);
+        const base64Content = event.target.result.split(',')[1];
+        setContent(base64Content);
+        speak("PDF uploaded successfully. You can now see the document preview below.", 'normal');
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleLoadSample = () => {
+    const sampleData = `JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPJ4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9GMSA0IDAgUgo+Pgo+PgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNSAwIFIKPj4KZW5kb2JqCjQgMCBvYmoKPDwKL1R5cGUgL0ZvbnQKL1N1YnR5cGUgL1R5cGUxCi9CYXNlRm9udCAvSGVsdmV0aWNhCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9MZW5ndGggNDQKPj4Kc3RyZWFtCkJUCi9GMSA4IFRmCjEwMCA3MDAgVGQKKFNhbXBsZSBEb2N1bWVudCkgVGoKRVQKZW5kc3RyZWFtCmVuZG9iago6cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDUgMDAwMDAgbiAKMDAwMDAwMDMxMiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjQwNQolJUVPRg==`;
+    setContent(sampleData);
+    setTitle('Sample Contract Document');
+    speak("Sample PDF loaded successfully. You can now see the document preview and add fields.", 'normal');
   };
 
   const handleSave = () => {
@@ -243,9 +252,14 @@ const DocumentEditor = () => {
               </div>
               <div>
                 <Label htmlFor="content">Upload PDF</Label>
-                <Input type="file" id="content" accept=".pdf" onChange={handleContentChange} />
+                <div className="flex gap-2">
+                  <Input type="file" id="content" accept=".pdf" onChange={handleContentChange} className="flex-1" />
+                  <Button variant="outline" onClick={handleLoadSample}>
+                    Load Sample PDF
+                  </Button>
+                </div>
                 {content && (
-                  <p className="text-sm text-green-600 mt-1">PDF uploaded successfully</p>
+                  <p className="text-sm text-green-600 mt-1">PDF loaded successfully</p>
                 )}
               </div>
             </CardContent>
@@ -314,6 +328,19 @@ const DocumentEditor = () => {
                   fields={document.currentDocument?.fields || []}
                   onFieldClick={handleFieldClick}
                 />
+              </CardContent>
+            </Card>
+          )}
+
+          {!content && (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-lg font-medium mb-2">No PDF Document</h3>
+                <p className="text-gray-600 mb-4">Upload a PDF file or load a sample document to get started.</p>
+                <Button onClick={handleLoadSample}>
+                  Load Sample PDF
+                </Button>
               </CardContent>
             </Card>
           )}

@@ -32,28 +32,46 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
 
   useEffect(() => {
     const renderPDF = async () => {
+      if (!pdfData) {
+        setError('No PDF data provided');
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
 
       try {
+        console.log('Rendering PDF with data length:', pdfData.length);
+        
         // Decode base64
         const decodedPdfData = atob(pdfData);
-
+        
         // Convert decoded data to Uint8Array
         const uint8Array = new Uint8Array(decodedPdfData.length);
         for (let i = 0; i < decodedPdfData.length; i++) {
           uint8Array[i] = decodedPdfData.charCodeAt(i);
         }
 
-        const pdf = await pdfjsLib.getDocument(uint8Array).promise;
-        const page = await pdf.getPage(1);
+        console.log('Decoded PDF data size:', uint8Array.length);
 
+        const pdf = await pdfjsLib.getDocument(uint8Array).promise;
+        console.log('PDF loaded successfully, pages:', pdf.numPages);
+        
+        const page = await pdf.getPage(1);
         const viewport = page.getViewport({ scale: zoom, rotation });
+        
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        if (!canvas) {
+          console.error('Canvas ref not available');
+          return;
+        }
 
         const context = canvas.getContext('2d');
-        if (!context) return;
+        if (!context) {
+          console.error('Canvas context not available');
+          return;
+        }
 
         canvas.height = viewport.height;
         canvas.width = viewport.width;
@@ -64,17 +82,16 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
         };
 
         await page.render(renderContext).promise;
+        console.log('PDF rendered successfully');
       } catch (err: any) {
         console.error("Error rendering PDF:", err);
-        setError(`Error rendering PDF: ${err.message}`);
+        setError(`Error rendering PDF: ${err.message || 'Unknown error'}`);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (pdfData) {
-      renderPDF();
-    }
+    renderPDF();
   }, [pdfData, zoom, rotation]);
 
   const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -130,7 +147,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
             return field.value.toString().substring(0, 20) + (field.value.toString().length > 20 ? '...' : '');
           }
         }
-        return field.type.charAt(0).toUpperCase() + field.type.slice(1);
+        return field.label || field.type.charAt(0).toUpperCase() + field.type.slice(1);
       };
 
       return (
@@ -139,6 +156,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
           style={style}
           onClick={() => signingMode && onFieldClick && onFieldClick(field)}
           className={signingMode ? 'hover:bg-blue-200 hover:border-blue-400' : ''}
+          title={field.label || field.type}
         >
           {getFieldContent()}
         </div>
@@ -151,6 +169,9 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
       <Card className="p-8 text-center">
         <CardContent>
           <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-sm text-gray-600 mb-4">
+            Make sure you've uploaded a valid PDF file or try loading the sample PDF.
+          </p>
           <Button onClick={() => window.location.reload()}>
             Reload Page
           </Button>
