@@ -66,7 +66,7 @@ export const WorkflowManager: React.FC<WorkflowManagerProps> = ({ document }) =>
 
   const handleAddSigner = () => {
     if (newSignerName && newSignerEmail) {
-      addSigner(document.id, {
+      addSigner({
         name: newSignerName,
         email: newSignerEmail,
         role: newSignerRole,
@@ -80,11 +80,11 @@ export const WorkflowManager: React.FC<WorkflowManagerProps> = ({ document }) =>
   };
 
   const toggleSignerDelegation = (signerId: string, canDelegate: boolean) => {
-    updateSigner(document.id, signerId, { canDelegate });
+    updateSigner(signerId, { canDelegate });
   };
 
   const setSignerAuth = (signerId: string, requireAuth: 'none' | 'email' | 'sms' | 'knowledge') => {
-    updateSigner(document.id, signerId, { requireAuth });
+    updateSigner(signerId, { requireAuth });
   };
 
   const getStatusIcon = (status: string) => {
