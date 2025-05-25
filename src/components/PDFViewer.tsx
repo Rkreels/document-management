@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +24,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const renderTaskRef = useRef<any>(null);
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,6 +42,12 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
       setError(null);
 
       try {
+        // Cancel any ongoing render task
+        if (renderTaskRef.current) {
+          renderTaskRef.current.cancel();
+          renderTaskRef.current = null;
+        }
+
         console.log('Rendering PDF with data length:', pdfData.length);
         
         // Decode base64
@@ -73,6 +79,9 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
           return;
         }
 
+        // Clear the canvas before rendering
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
@@ -81,9 +90,17 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
           viewport: viewport
         };
 
-        await page.render(renderContext).promise;
+        // Store the render task reference
+        renderTaskRef.current = page.render(renderContext);
+        await renderTaskRef.current.promise;
+        
         console.log('PDF rendered successfully');
+        renderTaskRef.current = null;
       } catch (err: any) {
+        if (err.name === 'RenderingCancelledException') {
+          console.log('PDF rendering was cancelled');
+          return;
+        }
         console.error("Error rendering PDF:", err);
         setError(`Error rendering PDF: ${err.message || 'Unknown error'}`);
       } finally {
@@ -92,6 +109,14 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
     };
 
     renderPDF();
+
+    // Cleanup function to cancel render task on unmount or dependency change
+    return () => {
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+        renderTaskRef.current = null;
+      }
+    };
   }, [pdfData, zoom, rotation]);
 
   const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
