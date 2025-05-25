@@ -17,6 +17,7 @@ export interface ReminderSchedule {
   enabled: boolean;
   frequency: 'daily' | 'weekly';
   customMessage?: string;
+  lastSent?: Date;
 }
 
 export interface NotificationSettings {
@@ -91,6 +92,7 @@ export interface AuditEvent {
   action: string;
   actor: string;
   details: string;
+  ipAddress?: string;
 }
 
 export interface DocumentTemplate {
@@ -111,14 +113,15 @@ export interface DocumentTemplate {
 
 export interface Notification {
   id: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  documentId: string;
+  type: 'reminder' | 'completion' | 'decline' | 'info' | 'success' | 'warning' | 'error';
   title: string;
   message: string;
   timestamp: Date;
   read: boolean;
-  status?: 'sent' | 'delivered' | 'failed';
-  recipientEmail?: string;
-  sentAt?: Date;
+  status: 'sent' | 'delivered' | 'failed' | 'opened';
+  recipientEmail: string;
+  sentAt: Date;
 }
 
 export interface DocumentContextType {
@@ -141,7 +144,7 @@ export interface DocumentContextType {
   createTemplate: (template: Omit<DocumentTemplate, 'id' | 'createdAt' | 'updatedAt'>) => DocumentTemplate;
   updateTemplate: (templateId: string, updates: Partial<DocumentTemplate>) => void;
   deleteTemplate: (templateId: string) => void;
-  createDocumentFromTemplate: (templateId: string) => Document;
+  createDocumentFromTemplate: (templateId: string, title: string) => Document;
   markNotificationAsRead: (notificationId: string) => void;
   getDocumentStats: () => {
     total: number;
@@ -151,8 +154,8 @@ export interface DocumentContextType {
     averageCompletionTime: number;
   };
   duplicateDocument: (documentId: string) => Document;
-  sendReminder: (documentId: string, signerId: string) => void;
-  createNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
+  sendReminder: (documentId: string) => void;
+  createNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => Notification;
 }
 
 export const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -337,9 +340,13 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
     
     createNotification({
-      type: 'success',
-      title: 'Document Sent',
-      message: message || 'Document has been sent for signing'
+      documentId,
+      type: 'reminder',
+      title: 'Reminder Sent',
+      message: message || 'Document has been sent for signing',
+      status: 'sent',
+      recipientEmail: 'recipient@example.com',
+      sentAt: new Date()
     });
   };
 
@@ -378,11 +385,11 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setTemplates(prev => prev.filter(template => template.id !== templateId));
   };
 
-  const createDocumentFromTemplate = (templateId: string): Document => {
+  const createDocumentFromTemplate = (templateId: string, title: string): Document => {
     const template = templates.find(t => t.id === templateId);
     if (!template) throw new Error('Template not found');
     
-    const newDocument = createDocument(template.title, template.content);
+    const newDocument = createDocument(title, template.content);
     updateDocument(newDocument.id, {
       fields: template.fields,
       signers: template.signers
@@ -433,20 +440,23 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return duplicatedDoc;
   };
 
-  const sendReminder = (documentId: string, signerId: string) => {
+  const sendReminder = (documentId: string) => {
     const document = documents.find(doc => doc.id === documentId);
-    const signer = document?.signers.find(s => s.id === signerId);
     
-    if (document && signer) {
+    if (document) {
       createNotification({
-        type: 'info',
+        documentId,
+        type: 'reminder',
         title: 'Reminder Sent',
-        message: `Reminder sent to ${signer.name} for document "${document.title}"`
+        message: `Reminder sent for document "${document.title}"`,
+        status: 'sent',
+        recipientEmail: 'recipient@example.com',
+        sentAt: new Date()
       });
     }
   };
 
-  const createNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+  const createNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>): Notification => {
     const newNotification: Notification = {
       ...notification,
       id: `notification-${Date.now()}`,
@@ -455,6 +465,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     
     setNotifications(prev => [...prev, newNotification]);
+    return newNotification;
   };
 
   // Initialize with demo data

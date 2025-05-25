@@ -70,6 +70,7 @@ const TemplateEditor = () => {
     }
 
     const templateData = {
+      title: name, // Add title property
       name,
       description,
       content,

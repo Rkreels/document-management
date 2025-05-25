@@ -245,9 +245,11 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ document
               variant="outline" 
               className="w-full justify-start"
               onClick={() => {
-                const notification = createNotification({
+                createNotification({
                   documentId: document.id,
-                  type: 'reminder',
+                  type: 'info',
+                  title: 'Custom Notification',
+                  message: 'Custom notification created',
                   recipientEmail: 'sender@example.com',
                   sentAt: new Date(),
                   status: 'sent',

@@ -84,11 +84,16 @@ export const PDFUpload: React.FC<PDFUploadProps> = ({ onPDFUpload, className }) 
     const pdfFile = files.find(file => file.type === 'application/pdf');
     
     if (pdfFile) {
-      // Create a fake event to trigger the same handler
-      const fakeEvent = {
-        target: { files: [pdfFile] }
-      } as React.ChangeEvent<HTMLInputElement>;
-      handleFileSelect(fakeEvent);
+      // Trigger the file handler directly with the File object
+      const input = fileInputRef.current;
+      if (input) {
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(pdfFile);
+        input.files = dataTransfer.files;
+        
+        const event = new Event('change', { bubbles: true });
+        input.dispatchEvent(event);
+      }
     } else {
       toast({
         title: 'Invalid File Type',
