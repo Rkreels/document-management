@@ -13,9 +13,25 @@ export interface ConditionalLogic {
   action: 'show' | 'hide' | 'require';
 }
 
+export interface ReminderSchedule {
+  enabled: boolean;
+  frequency: 'daily' | 'weekly';
+  customMessage?: string;
+}
+
+export interface NotificationSettings {
+  sendCopyToSender: boolean;
+  ccEmails?: string[];
+}
+
+export interface DelegatedTo {
+  name: string;
+  email: string;
+}
+
 export interface DocumentField {
   id: string;
-  type: string;
+  type: 'signature' | 'text' | 'date' | 'checkbox' | 'radio' | 'dropdown' | 'textarea' | 'number' | 'email' | 'formula' | 'attachment' | 'initial' | 'stamp';
   x: number;
   y: number;
   width: number;
@@ -40,79 +56,93 @@ export interface Signer {
   role: string;
   status: 'pending' | 'signed' | 'declined';
   signedAt?: Date;
+  order: number;
+  canDelegate?: boolean;
+  requireAuth?: 'none' | 'email' | 'sms' | 'knowledge';
+  delegatedTo?: DelegatedTo;
 }
 
 export interface Document {
   id: string;
   title: string;
   content: string;
-  status: 'draft' | 'sent' | 'completed' | 'declined' | 'voided' | 'expired';
-  signingOrder: 'sequential' | 'parallel';
+  status: 'draft' | 'sent' | 'completed' | 'voided' | 'declined' | 'expired';
+  signingOrder: 'parallel' | 'sequential';
   createdAt: Date;
   updatedAt: Date;
+  sentAt?: Date;
   auditTrail: AuditEvent[];
   fields: DocumentField[];
   signers: Signer[];
   expiresAt?: Date;
   completedAt?: Date;
-  reminderSchedule?: string;
+  reminderSchedule?: ReminderSchedule;
+  notifications?: NotificationSettings;
+  security?: {
+    requireAuth: boolean;
+    allowPrinting: boolean;
+    allowDownload: boolean;
+  };
 }
 
 export interface AuditEvent {
   id: string;
   timestamp: Date;
-  type: string;
-  user: string;
+  action: string;
+  actor: string;
   details: string;
 }
 
 export interface DocumentTemplate {
   id: string;
   title: string;
+  name: string;
   description: string;
+  category?: string;
+  tags?: string[];
   content: string;
   fields: DocumentField[];
+  signers: Signer[];
   createdAt: Date;
   updatedAt: Date;
-  usageCount?: number;
-  name?: string;
-  category?: string;
+  usageCount: number;
+  isPublic?: boolean;
 }
 
 export interface Notification {
   id: string;
+  type: 'info' | 'success' | 'warning' | 'error';
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
   timestamp: Date;
   read: boolean;
-  documentId?: string;
+  status?: 'sent' | 'delivered' | 'failed';
+  recipientEmail?: string;
+  sentAt?: Date;
 }
 
-interface DocumentContextType {
+export interface DocumentContextType {
   documents: Document[];
-  currentDocument: Document | null;
   templates: DocumentTemplate[];
   notifications: Notification[];
+  currentDocument: Document | null;
   setCurrentDocument: (document: Document | null) => void;
-  createDocument: (title: string, content?: string) => Document;
+  createDocument: (title: string, content: string) => Document;
   updateDocument: (id: string, updates: Partial<Document>) => void;
   deleteDocument: (id: string) => void;
-  addField: (documentId: string, field: Omit<DocumentField, 'id'>) => void;
-  updateField: (documentId: string, fieldId: string, updates: Partial<DocumentField>) => void;
-  deleteField: (documentId: string, fieldId: string) => void;
-  addSigner: (documentId: string, signer: Omit<Signer, 'id'>) => void;
-  updateSigner: (documentId: string, signerId: string, updates: Partial<Signer>) => void;
-  deleteSigner: (documentId: string, signerId: string) => void;
-  sendDocument: (documentId: string) => void;
-  signDocument: (documentId: string, signerId: string) => void;
-  createTemplate: (template: Omit<DocumentTemplate, 'id'>) => void;
-  updateTemplate: (id: string, updates: Partial<DocumentTemplate>) => void;
-  deleteTemplate: (id: string) => void;
-  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
-  markNotificationAsRead: (id: string) => void;
-  clearNotifications: () => void;
-  uploadPDFToDocument: (documentId: string, base64Data: string, fileName: string) => void;
+  addField: (field: Omit<DocumentField, 'id'>) => void;
+  updateField: (fieldId: string, updates: Partial<DocumentField>) => void;
+  removeField: (fieldId: string) => void;
+  addSigner: (signer: Omit<Signer, 'id'>) => void;
+  updateSigner: (signerId: string, updates: Partial<Signer>) => void;
+  removeSigner: (signerId: string) => void;
+  sendDocument: (documentId: string, message?: string) => void;
+  uploadPDF: (file: File) => Promise<string>;
+  createTemplate: (template: Omit<DocumentTemplate, 'id' | 'createdAt' | 'updatedAt'>) => DocumentTemplate;
+  updateTemplate: (templateId: string, updates: Partial<DocumentTemplate>) => void;
+  deleteTemplate: (templateId: string) => void;
+  createDocumentFromTemplate: (templateId: string) => Document;
+  markNotificationAsRead: (notificationId: string) => void;
   getDocumentStats: () => {
     total: number;
     completed: number;
@@ -120,9 +150,9 @@ interface DocumentContextType {
     draft: number;
     averageCompletionTime: number;
   };
-  duplicateDocument?: (documentId: string) => void;
-  sendReminder?: (documentId: string, signerId: string) => void;
-  createNotification?: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
+  duplicateDocument: (documentId: string) => Document;
+  sendReminder: (documentId: string, signerId: string) => void;
+  createNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
 }
 
 export const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -136,10 +166,10 @@ export const useDocument = () => {
 };
 
 export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [documents, setDocuments] = useState<Document[]>([sampleDocument]);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [currentDocument, setCurrentDocument] = useState<Document | null>(sampleDocument);
+  const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
 
   // Load data from localStorage on initial render
   useEffect(() => {
@@ -203,444 +233,168 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   };
 
-  const createDocument = (title: string, content?: string): Document => {
+  const createDocument = (title: string, content: string): Document => {
     const newDocument: Document = {
-      id: generateId(),
+      id: `doc-${Date.now()}`,
       title,
-      content: content || '', // Allow empty content initially
+      content,
       status: 'draft',
-      signingOrder: 'sequential',
+      signingOrder: 'parallel',
       createdAt: new Date(),
       updatedAt: new Date(),
       auditTrail: [],
       fields: [],
       signers: []
     };
-
+    
     setDocuments(prev => [...prev, newDocument]);
-    setCurrentDocument(newDocument);
-    
-    // Save to localStorage
-    const savedDocuments = JSON.parse(localStorage.getItem('documents') || '[]');
-    savedDocuments.push(newDocument);
-    localStorage.setItem('documents', JSON.stringify(savedDocuments));
-    
     return newDocument;
-  };
-
-  const uploadPDFToDocument = (documentId: string, base64Data: string, fileName: string): void => {
-    updateDocument(documentId, {
-      content: base64Data,
-      title: fileName.replace('.pdf', ''),
-      updatedAt: new Date()
-    });
   };
 
   const updateDocument = (id: string, updates: Partial<Document>) => {
     setDocuments(prev => prev.map(doc => 
       doc.id === id ? { ...doc, ...updates, updatedAt: new Date() } : doc
     ));
-
-    // Update currentDocument if it's the one being updated
-    if (currentDocument && currentDocument.id === id) {
-      setCurrentDocument(prev => prev ? { ...prev, ...updates, updatedAt: new Date() } : prev);
+    
+    if (currentDocument?.id === id) {
+      setCurrentDocument(prev => prev ? { ...prev, ...updates, updatedAt: new Date() } : null);
     }
-
-    // Save to localStorage
-    const savedDocuments = JSON.parse(localStorage.getItem('documents') || '[]');
-    const updatedDocuments = savedDocuments.map((doc: any) => 
-      doc.id === id ? { ...doc, ...updates, updatedAt: new Date() } : doc
-    );
-    localStorage.setItem('documents', JSON.stringify(updatedDocuments));
   };
 
   const deleteDocument = (id: string) => {
     setDocuments(prev => prev.filter(doc => doc.id !== id));
-
-    // Clear currentDocument if it's the one being deleted
-    if (currentDocument && currentDocument.id === id) {
+    if (currentDocument?.id === id) {
       setCurrentDocument(null);
     }
-
-    // Save to localStorage
-    const savedDocuments = JSON.parse(localStorage.getItem('documents') || '[]');
-    const updatedDocuments = savedDocuments.filter((doc: any) => doc.id !== id);
-    localStorage.setItem('documents', JSON.stringify(updatedDocuments));
   };
 
-  const addField = (documentId: string, field: Omit<DocumentField, 'id'>) => {
-    const newField = { ...field, id: generateId() };
+  const addField = (field: Omit<DocumentField, 'id'>) => {
+    if (!currentDocument) return;
     
-    setDocuments(prev => prev.map(doc => 
-      doc.id === documentId ? { 
-        ...doc, 
-        fields: [...doc.fields, newField],
-        updatedAt: new Date()
-      } : doc
-    ));
-
-    // Update currentDocument if it's the one being modified
-    if (currentDocument && currentDocument.id === documentId) {
-      setCurrentDocument(prev => prev ? { 
-        ...prev, 
-        fields: [...prev.fields, newField],
-        updatedAt: new Date()
-      } : prev);
-    }
-
-    // Save to localStorage
-    const savedDocuments = JSON.parse(localStorage.getItem('documents') || '[]');
-    const updatedDocuments = savedDocuments.map((doc: any) => 
-      doc.id === documentId ? { 
-        ...doc, 
-        fields: [...doc.fields, newField],
-        updatedAt: new Date()
-      } : doc
-    );
-    localStorage.setItem('documents', JSON.stringify(updatedDocuments));
-  };
-
-  const updateField = (documentId: string, fieldId: string, updates: Partial<DocumentField>) => {
-    setDocuments(prev => prev.map(doc => 
-      doc.id === documentId ? { 
-        ...doc, 
-        fields: doc.fields.map(field => 
-          field.id === fieldId ? { ...field, ...updates } : field
-        ),
-        updatedAt: new Date()
-      } : doc
-    ));
-
-    // Update currentDocument if it's the one being modified
-    if (currentDocument && currentDocument.id === documentId) {
-      setCurrentDocument(prev => prev ? { 
-        ...prev, 
-        fields: prev.fields.map(field => 
-          field.id === fieldId ? { ...field, ...updates } : field
-        ),
-        updatedAt: new Date()
-      } : prev);
-    }
-
-    // Save to localStorage
-    const savedDocuments = JSON.parse(localStorage.getItem('documents') || '[]');
-    const updatedDocuments = savedDocuments.map((doc: any) => 
-      doc.id === documentId ? { 
-        ...doc, 
-        fields: doc.fields.map((field: any) => 
-          field.id === fieldId ? { ...field, ...updates } : field
-        ),
-        updatedAt: new Date()
-      } : doc
-    );
-    localStorage.setItem('documents', JSON.stringify(updatedDocuments));
-  };
-
-  const deleteField = (documentId: string, fieldId: string) => {
-    setDocuments(prev => prev.map(doc => 
-      doc.id === documentId ? { 
-        ...doc, 
-        fields: doc.fields.filter(field => field.id !== fieldId),
-        updatedAt: new Date()
-      } : doc
-    ));
-
-    // Update currentDocument if it's the one being modified
-    if (currentDocument && currentDocument.id === documentId) {
-      setCurrentDocument(prev => prev ? { 
-        ...prev, 
-        fields: prev.fields.filter(field => field.id !== fieldId),
-        updatedAt: new Date()
-      } : prev);
-    }
-
-    // Save to localStorage
-    const savedDocuments = JSON.parse(localStorage.getItem('documents') || '[]');
-    const updatedDocuments = savedDocuments.map((doc: any) => 
-      doc.id === documentId ? { 
-        ...doc, 
-        fields: doc.fields.filter((field: any) => field.id !== fieldId),
-        updatedAt: new Date()
-      } : doc
-    );
-    localStorage.setItem('documents', JSON.stringify(updatedDocuments));
-  };
-
-  const addSigner = (documentId: string, signer: Omit<Signer, 'id'>) => {
-    const newSigner = { ...signer, id: generateId() };
-    
-    setDocuments(prev => prev.map(doc => 
-      doc.id === documentId ? { 
-        ...doc, 
-        signers: [...doc.signers, newSigner],
-        updatedAt: new Date()
-      } : doc
-    ));
-
-    // Update currentDocument if it's the one being modified
-    if (currentDocument && currentDocument.id === documentId) {
-      setCurrentDocument(prev => prev ? { 
-        ...prev, 
-        signers: [...prev.signers, newSigner],
-        updatedAt: new Date()
-      } : prev);
-    }
-
-    // Save to localStorage
-    const savedDocuments = JSON.parse(localStorage.getItem('documents') || '[]');
-    const updatedDocuments = savedDocuments.map((doc: any) => 
-      doc.id === documentId ? { 
-        ...doc, 
-        signers: [...doc.signers, newSigner],
-        updatedAt: new Date()
-      } : doc
-    );
-    localStorage.setItem('documents', JSON.stringify(updatedDocuments));
-  };
-
-  const updateSigner = (documentId: string, signerId: string, updates: Partial<Signer>) => {
-    setDocuments(prev => prev.map(doc => 
-      doc.id === documentId ? { 
-        ...doc, 
-        signers: doc.signers.map(signer => 
-          signer.id === signerId ? { ...signer, ...updates } : signer
-        ),
-        updatedAt: new Date()
-      } : doc
-    ));
-
-    // Update currentDocument if it's the one being modified
-    if (currentDocument && currentDocument.id === documentId) {
-      setCurrentDocument(prev => prev ? { 
-        ...prev, 
-        signers: prev.signers.map(signer => 
-          signer.id === signerId ? { ...signer, ...updates } : signer
-        ),
-        updatedAt: new Date()
-      } : prev);
-    }
-
-    // Save to localStorage
-    const savedDocuments = JSON.parse(localStorage.getItem('documents') || '[]');
-    const updatedDocuments = savedDocuments.map((doc: any) => 
-      doc.id === documentId ? { 
-        ...doc, 
-        signers: doc.signers.map((signer: any) => 
-          signer.id === signerId ? { ...signer, ...updates } : signer
-        ),
-        updatedAt: new Date()
-      } : doc
-    );
-    localStorage.setItem('documents', JSON.stringify(updatedDocuments));
-  };
-
-  const deleteSigner = (documentId: string, signerId: string) => {
-    setDocuments(prev => prev.map(doc => 
-      doc.id === documentId ? { 
-        ...doc, 
-        signers: doc.signers.filter(signer => signer.id !== signerId),
-        updatedAt: new Date()
-      } : doc
-    ));
-
-    // Update currentDocument if it's the one being modified
-    if (currentDocument && currentDocument.id === documentId) {
-      setCurrentDocument(prev => prev ? { 
-        ...prev, 
-        signers: prev.signers.filter(signer => signer.id !== signerId),
-        updatedAt: new Date()
-      } : prev);
-    }
-
-    // Save to localStorage
-    const savedDocuments = JSON.parse(localStorage.getItem('documents') || '[]');
-    const updatedDocuments = savedDocuments.map((doc: any) => 
-      doc.id === documentId ? { 
-        ...doc, 
-        signers: doc.signers.filter((signer: any) => signer.id !== signerId),
-        updatedAt: new Date()
-      } : doc
-    );
-    localStorage.setItem('documents', JSON.stringify(updatedDocuments));
-  };
-
-  const sendDocument = (documentId: string) => {
-    const auditEvent: AuditEvent = {
-      id: generateId(),
-      timestamp: new Date(),
-      type: 'document_sent',
-      user: 'current_user',
-      details: 'Document sent for signing'
+    const newField: DocumentField = {
+      ...field,
+      id: `field-${Date.now()}`
     };
+    
+    updateDocument(currentDocument.id, {
+      fields: [...currentDocument.fields, newField]
+    });
+  };
 
-    setDocuments(prev => prev.map(doc => 
-      doc.id === documentId ? { 
-        ...doc, 
-        status: 'sent',
-        auditTrail: [...doc.auditTrail, auditEvent],
-        updatedAt: new Date()
-      } : doc
-    ));
+  const updateField = (fieldId: string, updates: Partial<DocumentField>) => {
+    if (!currentDocument) return;
+    
+    updateDocument(currentDocument.id, {
+      fields: currentDocument.fields.map(field =>
+        field.id === fieldId ? { ...field, ...updates } : field
+      )
+    });
+  };
 
-    // Update currentDocument if it's the one being modified
-    if (currentDocument && currentDocument.id === documentId) {
-      setCurrentDocument(prev => prev ? { 
-        ...prev, 
-        status: 'sent',
-        auditTrail: [...prev.auditTrail, auditEvent],
-        updatedAt: new Date()
-      } : prev);
-    }
+  const removeField = (fieldId: string) => {
+    if (!currentDocument) return;
+    
+    updateDocument(currentDocument.id, {
+      fields: currentDocument.fields.filter(field => field.id !== fieldId)
+    });
+  };
 
-    // Save to localStorage
-    const savedDocuments = JSON.parse(localStorage.getItem('documents') || '[]');
-    const updatedDocuments = savedDocuments.map((doc: any) => 
-      doc.id === documentId ? { 
-        ...doc, 
-        status: 'sent',
-        auditTrail: [...doc.auditTrail, auditEvent],
-        updatedAt: new Date()
-      } : doc
-    );
-    localStorage.setItem('documents', JSON.stringify(updatedDocuments));
+  const addSigner = (signer: Omit<Signer, 'id'>) => {
+    if (!currentDocument) return;
+    
+    const newSigner: Signer = {
+      ...signer,
+      id: `signer-${Date.now()}`
+    };
+    
+    updateDocument(currentDocument.id, {
+      signers: [...currentDocument.signers, newSigner]
+    });
+  };
 
-    // Add notification
-    addNotification({
+  const updateSigner = (signerId: string, updates: Partial<Signer>) => {
+    if (!currentDocument) return;
+    
+    updateDocument(currentDocument.id, {
+      signers: currentDocument.signers.map(signer =>
+        signer.id === signerId ? { ...signer, ...updates } : signer
+      )
+    });
+  };
+
+  const removeSigner = (signerId: string) => {
+    if (!currentDocument) return;
+    
+    updateDocument(currentDocument.id, {
+      signers: currentDocument.signers.filter(signer => signer.id !== signerId)
+    });
+  };
+
+  const sendDocument = (documentId: string, message?: string) => {
+    updateDocument(documentId, {
+      status: 'sent',
+      sentAt: new Date()
+    });
+    
+    createNotification({
+      type: 'success',
       title: 'Document Sent',
-      message: `Document "${documents.find(d => d.id === documentId)?.title}" has been sent for signing.`,
-      type: 'success',
-      documentId
+      message: message || 'Document has been sent for signing'
     });
   };
 
-  const signDocument = (documentId: string, signerId: string) => {
-    const auditEvent: AuditEvent = {
-      id: generateId(),
-      timestamp: new Date(),
-      type: 'document_signed',
-      user: signerId,
-      details: 'Document signed by signer'
-    };
-
-    const updatedDocuments = documents.map(doc => {
-      if (doc.id !== documentId) return doc;
-
-      // Update the specific signer
-      const updatedSigners = doc.signers.map(signer => 
-        signer.id === signerId ? { 
-          ...signer, 
-          status: 'signed', 
-          signedAt: new Date() 
-        } : signer
-      );
-
-      // Check if all signers have signed
-      const allSigned = updatedSigners.every(signer => signer.status === 'signed');
-      
-      return {
-        ...doc,
-        signers: updatedSigners,
-        status: allSigned ? 'completed' : doc.status,
-        auditTrail: [...doc.auditTrail, auditEvent],
-        updatedAt: new Date()
+  const uploadPDF = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        const base64Data = base64.split(',')[1];
+        resolve(base64Data);
       };
-    });
-
-    setDocuments(updatedDocuments);
-
-    // Update currentDocument if it's the one being modified
-    if (currentDocument && currentDocument.id === documentId) {
-      const updatedDoc = updatedDocuments.find(doc => doc.id === documentId);
-      if (updatedDoc) {
-        setCurrentDocument(updatedDoc);
-      }
-    }
-
-    // Save to localStorage
-    localStorage.setItem('documents', JSON.stringify(updatedDocuments));
-
-    // Add notification
-    const document = documents.find(d => d.id === documentId);
-    const signer = document?.signers.find(s => s.id === signerId);
-    
-    addNotification({
-      title: 'Document Signed',
-      message: `${signer?.name} has signed "${document?.title}".`,
-      type: 'success',
-      documentId
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
     });
   };
 
-  const createTemplate = (template: Omit<DocumentTemplate, 'id'>) => {
-    const newTemplate = { 
-      ...template, 
-      id: generateId(),
+  const createTemplate = (template: Omit<DocumentTemplate, 'id' | 'createdAt' | 'updatedAt'>): DocumentTemplate => {
+    const newTemplate: DocumentTemplate = {
+      ...template,
+      id: `template-${Date.now()}`,
       createdAt: new Date(),
       updatedAt: new Date()
     };
     
     setTemplates(prev => [...prev, newTemplate]);
-
-    // Save to localStorage
-    const savedTemplates = JSON.parse(localStorage.getItem('templates') || '[]');
-    savedTemplates.push(newTemplate);
-    localStorage.setItem('templates', JSON.stringify(savedTemplates));
+    return newTemplate;
   };
 
-  const updateTemplate = (id: string, updates: Partial<DocumentTemplate>) => {
-    setTemplates(prev => prev.map(template => 
-      template.id === id ? { ...template, ...updates, updatedAt: new Date() } : template
+  const updateTemplate = (templateId: string, updates: Partial<DocumentTemplate>) => {
+    setTemplates(prev => prev.map(template =>
+      template.id === templateId ? { ...template, ...updates, updatedAt: new Date() } : template
     ));
-
-    // Save to localStorage
-    const savedTemplates = JSON.parse(localStorage.getItem('templates') || '[]');
-    const updatedTemplates = savedTemplates.map((template: any) => 
-      template.id === id ? { ...template, ...updates, updatedAt: new Date() } : template
-    );
-    localStorage.setItem('templates', JSON.stringify(updatedTemplates));
   };
 
-  const deleteTemplate = (id: string) => {
-    setTemplates(prev => prev.filter(template => template.id !== id));
-
-    // Save to localStorage
-    const savedTemplates = JSON.parse(localStorage.getItem('templates') || '[]');
-    const updatedTemplates = savedTemplates.filter((template: any) => template.id !== id);
-    localStorage.setItem('templates', JSON.stringify(updatedTemplates));
+  const deleteTemplate = (templateId: string) => {
+    setTemplates(prev => prev.filter(template => template.id !== templateId));
   };
 
-  const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
-    const newNotification = {
-      ...notification,
-      id: generateId(),
-      timestamp: new Date(),
-      read: false
-    };
-
-    setNotifications(prev => [newNotification, ...prev]);
-
-    // Save to localStorage
-    const savedNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-    savedNotifications.unshift(newNotification);
-    localStorage.setItem('notifications', JSON.stringify(savedNotifications));
+  const createDocumentFromTemplate = (templateId: string): Document => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) throw new Error('Template not found');
+    
+    const newDocument = createDocument(template.title, template.content);
+    updateDocument(newDocument.id, {
+      fields: template.fields,
+      signers: template.signers
+    });
+    
+    return newDocument;
   };
 
-  const markNotificationAsRead = (id: string) => {
-    setNotifications(prev => prev.map(notification => 
-      notification.id === id ? { ...notification, read: true } : notification
+  const markNotificationAsRead = (notificationId: string) => {
+    setNotifications(prev => prev.map(notification =>
+      notification.id === notificationId ? { ...notification, read: true } : notification
     ));
-
-    // Save to localStorage
-    const savedNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-    const updatedNotifications = savedNotifications.map((notification: any) => 
-      notification.id === id ? { ...notification, read: true } : notification
-    );
-    localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
-  };
-
-  const clearNotifications = () => {
-    setNotifications([]);
-    localStorage.setItem('notifications', JSON.stringify([]));
   };
 
   const getDocumentStats = () => {
@@ -649,17 +403,13 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const pending = documents.filter(doc => doc.status === 'sent').length;
     const draft = documents.filter(doc => doc.status === 'draft').length;
     
-    // Calculate average completion time
-    const completedDocs = documents.filter(doc => doc.status === 'completed');
-    let averageCompletionTime = 0;
-    
-    if (completedDocs.length > 0) {
-      const totalTime = completedDocs.reduce((sum, doc) => {
-        const timeDiff = doc.updatedAt.getTime() - doc.createdAt.getTime();
-        return sum + (timeDiff / (1000 * 60 * 60 * 24)); // Convert to days
-      }, 0);
-      averageCompletionTime = totalTime / completedDocs.length;
-    }
+    const completedDocs = documents.filter(doc => doc.status === 'completed' && doc.sentAt && doc.completedAt);
+    const averageCompletionTime = completedDocs.length > 0 
+      ? completedDocs.reduce((acc, doc) => {
+          const timeDiff = doc.completedAt!.getTime() - doc.sentAt!.getTime();
+          return acc + (timeDiff / (1000 * 60 * 60 * 24)); // Convert to days
+        }, 0) / completedDocs.length
+      : 0;
 
     return {
       total,
@@ -670,31 +420,137 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   };
 
+  const duplicateDocument = (documentId: string): Document => {
+    const originalDoc = documents.find(doc => doc.id === documentId);
+    if (!originalDoc) throw new Error('Document not found');
+    
+    const duplicatedDoc = createDocument(`${originalDoc.title} (Copy)`, originalDoc.content);
+    updateDocument(duplicatedDoc.id, {
+      fields: originalDoc.fields.map(field => ({ ...field, id: `field-${Date.now()}-${Math.random()}` })),
+      signers: originalDoc.signers.map(signer => ({ ...signer, id: `signer-${Date.now()}-${Math.random()}`, status: 'pending' as const }))
+    });
+    
+    return duplicatedDoc;
+  };
+
+  const sendReminder = (documentId: string, signerId: string) => {
+    const document = documents.find(doc => doc.id === documentId);
+    const signer = document?.signers.find(s => s.id === signerId);
+    
+    if (document && signer) {
+      createNotification({
+        type: 'info',
+        title: 'Reminder Sent',
+        message: `Reminder sent to ${signer.name} for document "${document.title}"`
+      });
+    }
+  };
+
+  const createNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+    const newNotification: Notification = {
+      ...notification,
+      id: `notification-${Date.now()}`,
+      timestamp: new Date(),
+      read: false
+    };
+    
+    setNotifications(prev => [...prev, newNotification]);
+  };
+
+  // Initialize with demo data
+  useEffect(() => {
+    const demoDocument: Document = {
+      id: 'sample-doc-1',
+      title: 'Sample Employment Contract',
+      content: 'JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPJ4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9GMSA0IDAgUgo+Pgo+PgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNSAwIFIKPj4KZW5kb2JqCjQgMCBvYmoKPDwKL1R5cGUgL0ZvbnQKL1N1YnR5cGUgL1R5cGUxCi9CYXNlRm9udCAvSGVsdmV0aWNhCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9MZW5ndGggNDQKPj4Kc3RyZWFtCkJUCi9GMSA4IFRmCjEwMCA3MDAgVGQKKFNhbXBsZSBEb2N1bWVudCkgVGoKRVQKZW5kc3RyZWFtCmVuZG9iago6cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDAw1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDUgMDAwMDAgbiAKMDAwMDAwMDMxMiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjQwNQolJUVPRg==',
+      status: 'draft',
+      signingOrder: 'parallel',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      auditTrail: [],
+      fields: [
+        {
+          id: 'field-1',
+          type: 'signature',
+          x: 10,
+          y: 80,
+          width: 25,
+          height: 8,
+          page: 1,
+          required: true,
+          label: 'Signature',
+          signer: 'signer-1',
+          signerId: 'signer-1'
+        },
+        {
+          id: 'field-2',
+          type: 'text',
+          x: 40,
+          y: 80,
+          width: 20,
+          height: 6,
+          page: 1,
+          required: true,
+          label: 'Full Name',
+          signer: 'signer-1',
+          signerId: 'signer-1'
+        },
+        {
+          id: 'field-3',
+          type: 'date',
+          x: 70,
+          y: 80,
+          width: 15,
+          height: 6,
+          page: 1,
+          required: true,
+          label: 'Date',
+          signer: 'signer-1',
+          signerId: 'signer-1'
+        }
+      ],
+      signers: [
+        {
+          id: 'signer-1',
+          name: 'John Doe',
+          email: 'john.doe@example.com',
+          role: 'Employee',
+          status: 'pending',
+          order: 1
+        }
+      ]
+    };
+
+    setDocuments([demoDocument]);
+    setCurrentDocument(demoDocument);
+  }, []);
+
   const value: DocumentContextType = {
     documents,
-    currentDocument,
     templates,
     notifications,
+    currentDocument,
     setCurrentDocument,
     createDocument,
     updateDocument,
     deleteDocument,
     addField,
     updateField,
-    deleteField,
+    removeField,
     addSigner,
     updateSigner,
-    deleteSigner,
+    removeSigner,
     sendDocument,
-    signDocument,
+    uploadPDF,
     createTemplate,
     updateTemplate,
     deleteTemplate,
-    addNotification,
+    createDocumentFromTemplate,
     markNotificationAsRead,
-    clearNotifications,
-    uploadPDFToDocument,
     getDocumentStats,
+    duplicateDocument,
+    sendReminder,
+    createNotification
   };
 
   return (
@@ -702,73 +558,4 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       {children}
     </DocumentContext.Provider>
   );
-};
-
-// Sample document for testing
-export const sampleDocument: Document = {
-  id: 'sample-doc-1',
-  title: 'Sample Contract',
-  content: '',
-  status: 'draft',
-  signingOrder: 'sequential',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  auditTrail: [],
-  fields: [
-    {
-      id: 'field-1',
-      type: 'signature',
-      x: 20,
-      y: 30,
-      width: 20,
-      height: 10,
-      page: 1,
-      required: true,
-      label: 'Signature',
-      signer: 'signer-1',
-      signerId: 'signer-1'
-    },
-    {
-      id: 'field-2',
-      type: 'text',
-      x: 50,
-      y: 30,
-      width: 30,
-      height: 5,
-      page: 1,
-      required: true,
-      label: 'Full Name',
-      signer: 'signer-1',
-      signerId: 'signer-1'
-    },
-    {
-      id: 'field-3',
-      type: 'date',
-      x: 20,
-      y: 50,
-      width: 15,
-      height: 5,
-      page: 1,
-      required: true,
-      label: 'Date',
-      signer: 'signer-1',
-      signerId: 'signer-1'
-    }
-  ],
-  signers: [
-    {
-      id: 'signer-1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      role: 'Client',
-      status: 'pending'
-    },
-    {
-      id: 'signer-2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      role: 'Agent',
-      status: 'pending'
-    }
-  ]
 };

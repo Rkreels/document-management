@@ -137,6 +137,7 @@ const DocumentEditor = () => {
       y: 10,
       width: 15,
       height: 6,
+      page: 1,
       signerId: selectedSigner || undefined,
       required: true,
       label: `${selectedFieldType} field`,

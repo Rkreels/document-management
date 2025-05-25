@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,14 +45,14 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
 
   const requiredFields = signerFields.filter(field => field.required);
   const completedFields = requiredFields.filter(field => 
-    fieldValues[field.id] || field.value
+    fieldValues[field.id] || (typeof field.value === 'string' && field.value)
   );
 
   useEffect(() => {
     // Initialize field values from document
     const initialValues: Record<string, string> = {};
     document.fields.forEach(field => {
-      if (field.value) {
+      if (typeof field.value === 'string') {
         initialValues[field.id] = field.value;
       }
     });
