@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { defaultTemplates } from '@/utils/defaultTemplates';
 
 export interface ValidationRule {
   type: 'email' | 'phone' | 'number' | 'custom';
@@ -541,10 +542,14 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     if (templates.length === 0) {
       defaultTemplates.forEach(template => {
-        addTemplates(template); // Fixed: was addTemplate, now addTemplates
+        addTemplate(template);
       });
     }
   }, []);
+
+  const addTemplate = (template: DocumentTemplate) => {
+    setTemplates(prev => [...prev, template]);
+  };
 
   const value: DocumentContextType = {
     documents,
