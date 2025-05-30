@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,18 +24,26 @@ import { BulkActions } from './BulkActions';
 interface DocumentListProps {
   documents: Document[];
   showBulkActions?: boolean;
+  selectedDocuments?: string[];
+  onSelectionChange?: (selectedDocuments: string[]) => void;
 }
 
 export const DocumentList: React.FC<DocumentListProps> = ({ 
   documents, 
-  showBulkActions = true 
+  showBulkActions = true,
+  selectedDocuments: externalSelectedDocuments,
+  onSelectionChange: externalOnSelectionChange
 }) => {
   const navigate = useNavigate();
   const { deleteDocument, sendDocument } = useDocument();
-  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
+  const [internalSelectedDocuments, setInternalSelectedDocuments] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('updatedAt');
+
+  // Use external state if provided, otherwise use internal state
+  const selectedDocuments = externalSelectedDocuments || internalSelectedDocuments;
+  const setSelectedDocuments = externalOnSelectionChange || setInternalSelectedDocuments;
 
   const filteredDocuments = documents
     .filter(doc => {
