@@ -1,13 +1,14 @@
-
 import { DocumentTemplate } from '@/contexts/DocumentContext';
 
 export const defaultTemplates: DocumentTemplate[] = [
   {
     id: 'employment-contract',
     name: 'Employment Contract',
+    title: 'Employment Contract',
     description: 'Standard employment agreement with signature fields for employee and employer',
     category: 'HR & Employment',
     content: '', // Will be set to a sample PDF data
+    usageCount: 0,
     fields: [
       {
         id: 'employee-name',
@@ -71,9 +72,11 @@ export const defaultTemplates: DocumentTemplate[] = [
   {
     id: 'nda-agreement',
     name: 'Non-Disclosure Agreement',
+    title: 'Non-Disclosure Agreement',
     description: 'Standard NDA template for protecting confidential information',
     category: 'Legal',
     content: '',
+    usageCount: 0,
     fields: [
       {
         id: 'disclosing-party',
@@ -160,9 +163,11 @@ export const defaultTemplates: DocumentTemplate[] = [
   {
     id: 'purchase-agreement',
     name: 'Purchase Agreement',
+    title: 'Purchase Agreement',
     description: 'Template for buying and selling goods or services',
     category: 'Sales',
     content: '',
+    usageCount: 0,
     fields: [
       {
         id: 'buyer-name',
@@ -249,9 +254,11 @@ export const defaultTemplates: DocumentTemplate[] = [
   {
     id: 'lease-agreement',
     name: 'Lease Agreement',
+    title: 'Lease Agreement',
     description: 'Residential or commercial property lease template',
     category: 'Real Estate',
     content: '',
+    usageCount: 0,
     fields: [
       {
         id: 'tenant-name',
@@ -349,9 +356,11 @@ export const defaultTemplates: DocumentTemplate[] = [
   {
     id: 'service-agreement',
     name: 'Service Agreement',
+    title: 'Service Agreement',
     description: 'Professional services contract template',
     category: 'Professional Services',
     content: '',
+    usageCount: 0,
     fields: [
       {
         id: 'client-name',
@@ -438,9 +447,11 @@ export const defaultTemplates: DocumentTemplate[] = [
   {
     id: 'vendor-agreement',
     name: 'Vendor Agreement',
+    title: 'Vendor Agreement',
     description: 'Supplier and vendor contract template',
     category: 'Business',
     content: '',
+    usageCount: 0,
     fields: [
       {
         id: 'company-name',
@@ -527,9 +538,11 @@ export const defaultTemplates: DocumentTemplate[] = [
   {
     id: 'consulting-agreement',
     name: 'Consulting Agreement',
+    title: 'Consulting Agreement',
     description: 'Independent contractor and consulting services template',
     category: 'Professional Services',
     content: '',
+    usageCount: 0,
     fields: [
       {
         id: 'consultant-name',
@@ -616,9 +629,11 @@ export const defaultTemplates: DocumentTemplate[] = [
   {
     id: 'partnership-agreement',
     name: 'Partnership Agreement',
+    title: 'Partnership Agreement',
     description: 'Business partnership formation template',
     category: 'Business',
     content: '',
+    usageCount: 0,
     fields: [
       {
         id: 'partner1-name',
@@ -705,9 +720,11 @@ export const defaultTemplates: DocumentTemplate[] = [
   {
     id: 'loan-agreement',
     name: 'Loan Agreement',
+    title: 'Loan Agreement',
     description: 'Personal or business loan documentation template',
     category: 'Financial',
     content: '',
+    usageCount: 0,
     fields: [
       {
         id: 'borrower-name',
@@ -805,9 +822,11 @@ export const defaultTemplates: DocumentTemplate[] = [
   {
     id: 'invoice-template',
     name: 'Invoice Template',
+    title: 'Invoice Template',
     description: 'Professional invoice with signature approval',
     category: 'Financial',
     content: '',
+    usageCount: 0,
     fields: [
       {
         id: 'invoice-number',

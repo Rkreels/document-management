@@ -537,6 +537,15 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setCurrentDocument(demoDocument);
   }, []);
 
+  // Initialize default templates if none exist
+  useEffect(() => {
+    if (templates.length === 0) {
+      defaultTemplates.forEach(template => {
+        addTemplates(template); // Fixed: was addTemplate, now addTemplates
+      });
+    }
+  }, []);
+
   const value: DocumentContextType = {
     documents,
     templates,
@@ -572,3 +581,5 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     </DocumentContext.Provider>
   );
 };
+
+export default DocumentProvider;
