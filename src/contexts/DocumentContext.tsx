@@ -156,6 +156,7 @@ export interface DocumentContextType {
   duplicateDocument: (documentId: string) => Document;
   sendReminder: (documentId: string) => void;
   createNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => Notification;
+  addTemplate: (template: DocumentTemplate) => void;
 }
 
 export const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -561,7 +562,8 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     getDocumentStats,
     duplicateDocument,
     sendReminder,
-    createNotification
+    createNotification,
+    addTemplate
   };
 
   return (

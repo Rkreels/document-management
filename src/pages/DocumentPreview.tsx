@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import { SignaturePad } from '@/components/SignaturePad';
 import { TextFieldInput } from '@/components/TextFieldInput';
 import { DocumentSender } from '@/components/DocumentSender';
 import { VoiceAssistant } from '@/components/VoiceAssistant';
+import { SmartVoiceGuide } from '@/components/SmartVoiceGuide';
 
 const DocumentPreview = () => {
   const { documentId } = useParams();
@@ -43,7 +43,24 @@ const DocumentPreview = () => {
       if (signingMode) {
         speak("You're now in signing mode. Click on any field to fill it out. I'll guide you through each step.", 'normal');
       } else {
-        speak(`Viewing ${document.title}. This document has ${document.fields.length} fields and ${document.signers.length} signers. You can edit the document, send it for signing, or switch to signing mode to test the signing experience.`, 'normal');
+        const completionRate = getCompletionPercentage();
+        const fieldCount = document.fields.length;
+        const signerCount = document.signers.length;
+        
+        speak(`Viewing ${document.title}. This document has ${fieldCount} fields and ${signerCount} signers. Current completion: ${completionRate}%. You can edit the document, send it for signing, or switch to signing mode to test the signing experience.`, 'normal');
+        
+        // Provide smart guidance based on document state
+        setTimeout(() => {
+          if (document.status === 'draft') {
+            if (fieldCount === 0) {
+              (window as any).voiceGuide?.provideActionGuidance('empty-document');
+            } else if (signerCount === 0) {
+              (window as any).voiceGuide?.provideActionGuidance('missing-signers');
+            } else {
+              (window as any).voiceGuide?.provideActionGuidance('document-ready-to-send');
+            }
+          }
+        }, 3000);
       }
     }, 1000);
 
@@ -160,6 +177,7 @@ const DocumentPreview = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SmartVoiceGuide />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">

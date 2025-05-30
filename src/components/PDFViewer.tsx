@@ -62,13 +62,21 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
         renderTaskRef.current = null;
       }
 
+      // Clean PDF data - remove data URL prefix if present
+      let cleanPdfData = pdfData;
+      if (pdfData.includes('data:application/pdf;base64,')) {
+        cleanPdfData = pdfData.split('data:application/pdf;base64,')[1];
+      } else if (pdfData.includes('base64,')) {
+        cleanPdfData = pdfData.split('base64,')[1];
+      }
+
       // Decode base64 with better error handling
       let uint8Array: Uint8Array;
       try {
-        const decodedPdfData = atob(pdfData);
-        uint8Array = new Uint8Array(decodedPdfData.length);
-        for (let i = 0; i < decodedPdfData.length; i++) {
-          uint8Array[i] = decodedPdfData.charCodeAt(i);
+        const binaryString = atob(cleanPdfData);
+        uint8Array = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          uint8Array[i] = binaryString.charCodeAt(i);
         }
         console.log('PDF data decoded successfully, size:', uint8Array.length);
       } catch (decodeError) {
@@ -77,11 +85,12 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
         return;
       }
 
-      // Load PDF document
+      // Load PDF document with proper configuration
       const loadingTask = pdfjsLib.getDocument({
         data: uint8Array,
-        cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+        cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/cmaps/`,
         cMapPacked: true,
+        standardFontDataUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/standard_fonts/`,
       });
 
       const pdf = await loadingTask.promise;
@@ -96,6 +105,8 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
         setError('Invalid PDF file. Please upload a valid PDF document.');
       } else if (err.name === 'MissingPDFException') {
         setError('PDF file is missing or corrupted. Please try uploading again.');
+      } else if (err.name === 'UnexpectedResponseException') {
+        setError('Network error loading PDF. Please check your connection.');
       } else {
         setError(`Error loading PDF: ${err.message || 'Unknown error'}`);
       }
@@ -119,10 +130,12 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
         return;
       }
 
-      // Clear and resize canvas
-      context.clearRect(0, 0, canvas.width, canvas.height);
+      // Set canvas dimensions
       canvas.height = viewport.height;
       canvas.width = viewport.width;
+
+      // Clear canvas
+      context.clearRect(0, 0, canvas.width, canvas.height);
 
       const renderContext = {
         canvasContext: context,
@@ -352,4 +365,82 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
       </div>
     </div>
   );
+};
+
+const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  if (!signingMode || !onFieldClick || !canvasRef.current) return;
+
+  const canvas = canvasRef.current;
+  const rect = canvas.getBoundingClientRect();
+  const x = ((event.clientX - rect.left) / rect.width) * 100;
+  const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+  const clickedField = fields.find(field => {
+    if (field.page !== currentPage) return false;
+    const fieldRight = field.x + field.width;
+    const fieldBottom = field.y + field.height;
+    return x >= field.x && x <= fieldRight && y >= field.y && y <= fieldBottom;
+  });
+
+  if (clickedField) {
+    onFieldClick(clickedField);
+  }
+};
+
+const renderFields = () => {
+  if (!canvasRef.current) return null;
+
+  return fields
+    .filter(field => field.page === currentPage)
+    .map(field => {
+      const style: React.CSSProperties = {
+        position: 'absolute',
+        left: `${field.x}%`,
+        top: `${field.y}%`,
+        width: `${field.width}%`,
+        height: `${field.height}%`,
+        border: signingMode ? '2px solid #3b82f6' : '2px dashed #6b7280',
+        backgroundColor: signingMode ? 'rgba(59, 130, 246, 0.1)' : 'rgba(107, 114, 128, 0.1)',
+        cursor: signingMode ? 'pointer' : 'default',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '12px',
+        color: signingMode ? '#1e40af' : '#374151',
+        fontWeight: '500',
+        pointerEvents: signingMode ? 'auto' : 'none',
+        transition: 'all 0.2s ease',
+        zIndex: 10
+      };
+
+      const getFieldContent = () => {
+        if (field.value) {
+          if (field.type === 'signature') {
+            return '✓ Signed';
+          } else if (field.type === 'checkbox') {
+            return field.value === 'true' ? '☑' : '☐';
+          } else {
+            return field.value.toString().substring(0, 20) + (field.value.toString().length > 20 ? '...' : '');
+          }
+        }
+        return field.label || field.type.charAt(0).toUpperCase() + field.type.slice(1);
+      };
+
+      return (
+        <div
+          key={field.id}
+          style={style}
+          onClick={() => signingMode && onFieldClick && onFieldClick(field)}
+          className={signingMode ? 'hover:bg-blue-200 hover:border-blue-400' : ''}
+          title={field.label || field.type}
+        >
+          {getFieldContent()}
+        </div>
+      );
+    });
+};
+
+const handleRetry = () => {
+  setError(null);
+  loadPDF();
 };
