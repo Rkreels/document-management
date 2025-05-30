@@ -1,54 +1,97 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Upload, FileText, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Upload, FileText, AlertCircle, Image, File, FileX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface EnhancedPDFUploadProps {
-  onPDFUpload: (base64Data: string, fileName: string, fileInfo: FileInfo) => void;
-  maxSizeMB?: number;
+  onFileUpload: (base64Data: string, fileName: string, mimeType: string) => void;
   className?: string;
-}
-
-interface FileInfo {
-  name: string;
-  size: number;
-  type: string;
-  lastModified: number;
-  pages?: number;
+  acceptedTypes?: string[];
+  maxSizeMB?: number;
 }
 
 export const EnhancedPDFUpload: React.FC<EnhancedPDFUploadProps> = ({ 
-  onPDFUpload, 
-  maxSizeMB = 25,
-  className 
+  onFileUpload, 
+  className,
+  acceptedTypes = ['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'],
+  maxSizeMB = 25
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [dragActive, setDragActive] = useState(false);
+
+  const getSupportedMimeTypes = () => {
+    const mimeTypeMap: Record<string, string> = {
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'txt': 'text/plain',
+      'csv': 'text/csv',
+      'html': 'text/html',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'bmp': 'image/bmp',
+      'webp': 'image/webp',
+      'svg': 'image/svg+xml',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    };
+
+    return acceptedTypes.map(type => mimeTypeMap[type]).filter(Boolean);
+  };
+
+  const getAcceptAttribute = () => {
+    const extensions = acceptedTypes.map(type => `.${type}`).join(',');
+    const mimeTypes = getSupportedMimeTypes().join(',');
+    return `${extensions},${mimeTypes}`;
+  };
+
+  const getFileIcon = (fileName: string) => {
+    const extension = fileName.toLowerCase().split('.').pop() || '';
+    
+    if (['pdf'].includes(extension)) {
+      return <FileText className="h-8 w-8 text-red-600" />;
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(extension)) {
+      return <Image className="h-8 w-8 text-blue-600" />;
+    } else if (['doc', 'docx'].includes(extension)) {
+      return <FileText className="h-8 w-8 text-blue-600" />;
+    } else if (['xls', 'xlsx'].includes(extension)) {
+      return <FileText className="h-8 w-8 text-green-600" />;
+    } else if (['ppt', 'pptx'].includes(extension)) {
+      return <FileText className="h-8 w-8 text-orange-600" />;
+    } else {
+      return <File className="h-8 w-8 text-gray-600" />;
+    }
+  };
 
   const validateFile = (file: File): string | null => {
+    const extension = file.name.toLowerCase().split('.').pop() || '';
+    
     // Check file type
-    if (file.type !== 'application/pdf') {
-      return 'Please select a PDF file only.';
+    if (!acceptedTypes.includes(extension)) {
+      return `Unsupported file type: .${extension}. Supported types: ${acceptedTypes.join(', ')}`;
     }
 
     // Check file size
     const maxSize = maxSizeMB * 1024 * 1024;
     if (file.size > maxSize) {
-      return `File size must be less than ${maxSizeMB}MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`;
-    }
-
-    // Check if file is not empty
-    if (file.size === 0) {
-      return 'The selected file is empty.';
+      return `File too large. Maximum size: ${maxSizeMB}MB`;
     }
 
     return null;
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    await processFile(file);
   };
 
   const processFile = async (file: File) => {
@@ -62,89 +105,37 @@ export const EnhancedPDFUpload: React.FC<EnhancedPDFUploadProps> = ({
       return;
     }
 
-    setIsUploading(true);
-    setUploadProgress(0);
-
     try {
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 100);
-
       const reader = new FileReader();
-      
-      reader.onload = async (e) => {
-        try {
-          const result = e.target?.result as string;
-          if (result) {
-            // Remove the data URL prefix to get just the base64 data
-            const base64Data = result.split(',')[1];
-            
-            // Create file info object
-            const fileInfo: FileInfo = {
-              name: file.name,
-              size: file.size,
-              type: file.type,
-              lastModified: file.lastModified,
-            };
-
-            // Try to get page count using PDF.js
-            try {
-              const pdfjsLib = await import('pdfjs-dist');
-              const pdfData = atob(base64Data);
-              const uint8Array = new Uint8Array(pdfData.length);
-              for (let i = 0; i < pdfData.length; i++) {
-                uint8Array[i] = pdfData.charCodeAt(i);
-              }
-              
-              const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
-              fileInfo.pages = pdf.numPages;
-            } catch (error) {
-              console.warn('Could not determine page count:', error);
-            }
-
-            clearInterval(progressInterval);
-            setUploadProgress(100);
-            
-            setTimeout(() => {
-              onPDFUpload(base64Data, file.name, fileInfo);
-              
-              toast({
-                title: 'PDF Uploaded Successfully',
-                description: `${file.name} has been processed and is ready for editing.${fileInfo.pages ? ` Contains ${fileInfo.pages} pages.` : ''}`,
-              });
-              
-              setIsUploading(false);
-              setUploadProgress(0);
-            }, 500);
-          }
-        } catch (error) {
-          clearInterval(progressInterval);
-          throw error;
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        if (result) {
+          // Remove the data URL prefix to get just the base64 data
+          const base64Data = result.split(',')[1];
+          onFileUpload(base64Data, file.name, file.type);
+          toast({
+            title: 'File Uploaded Successfully',
+            description: `${file.name} has been uploaded and is ready for editing.`,
+          });
         }
       };
 
       reader.onerror = () => {
-        clearInterval(progressInterval);
-        throw new Error('Failed to read the PDF file.');
+        toast({
+          title: 'Upload Failed',
+          description: 'There was an error reading the file. Please try again.',
+          variant: 'destructive',
+        });
       };
 
       reader.readAsDataURL(file);
     } catch (error) {
-      console.error('Error uploading PDF:', error);
+      console.error('Error uploading file:', error);
       toast({
         title: 'Upload Failed',
-        description: error instanceof Error ? error.message : 'There was an error uploading the PDF file.',
+        description: 'There was an error uploading the file. Please try again.',
         variant: 'destructive',
       });
-      setIsUploading(false);
-      setUploadProgress(0);
     }
 
     // Reset the input
@@ -153,38 +144,35 @@ export const EnhancedPDFUpload: React.FC<EnhancedPDFUploadProps> = ({
     }
   };
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    await processFile(file);
-  };
-
   const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    setDragActive(false);
-    
     const files = Array.from(event.dataTransfer.files);
-    const pdfFile = files.find(file => file.type === 'application/pdf');
     
-    if (pdfFile) {
-      await processFile(pdfFile);
-    } else if (files.length > 0) {
+    if (files.length > 1) {
       toast({
-        title: 'Invalid File Type',
-        description: 'Please drop a PDF file only.',
+        title: 'Multiple Files',
+        description: 'Please drop only one file at a time.',
         variant: 'destructive',
       });
+      return;
+    }
+
+    const file = files[0];
+    if (file) {
+      await processFile(file);
     }
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    setDragActive(true);
   };
 
-  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setDragActive(false);
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
@@ -193,81 +181,76 @@ export const EnhancedPDFUpload: React.FC<EnhancedPDFUploadProps> = ({
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          className={`
-            border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer
-            ${dragActive ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
-            ${isUploading ? 'pointer-events-none opacity-75' : ''}
-          `}
-          onClick={() => !isUploading && fileInputRef.current?.click()}
+          className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer"
+          onClick={() => fileInputRef.current?.click()}
         >
           <div className="flex flex-col items-center gap-4">
-            <div className={`p-3 rounded-full ${dragActive ? 'bg-blue-100' : 'bg-blue-50'}`}>
-              {isUploading ? (
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent" />
-              ) : (
-                <Upload className="h-8 w-8 text-blue-600" />
-              )}
+            <div className="p-3 bg-blue-50 rounded-full">
+              <Upload className="h-8 w-8 text-blue-600" />
             </div>
-            
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {isUploading ? 'Processing PDF...' : 'Upload PDF Document'}
-              </h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Upload Document</h3>
               <p className="text-gray-600 mb-4">
-                {isUploading 
-                  ? 'Please wait while we process your document'
-                  : 'Drag and drop your PDF file here, or click to browse'
-                }
+                Drag and drop your file here, or click to browse
               </p>
-              
-              {isUploading && (
-                <div className="mb-4">
-                  <Progress value={uploadProgress} className="w-full" />
-                  <p className="text-sm text-gray-500 mt-1">{uploadProgress}% complete</p>
-                </div>
-              )}
-              
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                <FileText className="h-4 w-4" />
-                <span>PDF files up to {maxSizeMB}MB</span>
+              <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-gray-500 mb-4">
+                {acceptedTypes.slice(0, 6).map((type) => (
+                  <Badge key={type} variant="outline" className="text-xs">
+                    .{type.toUpperCase()}
+                  </Badge>
+                ))}
+                {acceptedTypes.length > 6 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{acceptedTypes.length - 6} more
+                  </Badge>
+                )}
+              </div>
+              <div className="text-sm text-gray-500">
+                Maximum file size: {maxSizeMB}MB
               </div>
             </div>
-            
-            {!isUploading && (
-              <Button variant="outline" className="mt-2">
-                Choose File
-              </Button>
-            )}
+            <Button variant="outline" className="mt-2">
+              Choose File
+            </Button>
           </div>
         </div>
         
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pdf,application/pdf"
+          accept={getAcceptAttribute()}
           onChange={handleFileSelect}
           className="hidden"
-          disabled={isUploading}
         />
         
-        <div className="mt-4">
-          <div className="flex items-start gap-2 text-sm text-gray-600 mb-3">
+        <div className="mt-4 space-y-3">
+          <div className="flex items-start gap-2 text-sm text-gray-600">
             <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium">Supported formats & requirements:</p>
-              <ul className="list-disc list-inside mt-1 space-y-1">
-                <li>PDF files only (max {maxSizeMB}MB)</li>
-                <li>Password-protected PDFs are not supported</li>
-                <li>Fillable forms will be preserved</li>
-                <li>All text content will be searchable</li>
-              </ul>
+              <p className="font-medium">Supported file types:</p>
+              <div className="flex flex-wrap gap-1 mt-1">
+                <span>PDFs, Word documents, Images, Text files, Excel sheets, PowerPoint presentations</span>
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 p-2 rounded">
-            <CheckCircle className="h-3 w-3" />
-            <span>Your documents are processed securely and never stored permanently</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-gray-500">
+            <div className="flex items-center gap-1">
+              <FileText className="h-3 w-3 text-red-600" />
+              <span>PDF Documents</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Image className="h-3 w-3 text-blue-600" />
+              <span>Images</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <FileText className="h-3 w-3 text-blue-600" />
+              <span>Word Docs</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <File className="h-3 w-3 text-gray-600" />
+              <span>Text Files</span>
+            </div>
           </div>
         </div>
       </CardContent>

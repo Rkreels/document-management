@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Send, Download, Edit, CheckCircle, Clock, Users, FileText, Share } from 'lucide-react';
 import { useVoice } from '@/contexts/VoiceContext';
 import { useDocument, DocumentField } from '@/contexts/DocumentContext';
-import { PDFViewer } from '@/components/PDFViewer';
+import { UniversalFileViewer } from '@/components/UniversalFileViewer';
 import { SignaturePad } from '@/components/SignaturePad';
 import { TextFieldInput } from '@/components/TextFieldInput';
 import { DocumentSender } from '@/components/DocumentSender';
@@ -295,8 +296,10 @@ const DocumentPreview = () => {
           <TabsContent value="preview">
             <Card>
               <CardContent className="p-0">
-                <PDFViewer
-                  pdfData={document.content}
+                <UniversalFileViewer
+                  fileData={document.content}
+                  fileName={document.title}
+                  mimeType="application/pdf"
                   fields={document.fields}
                   onFieldClick={handleFieldClick}
                   signingMode={signingMode}

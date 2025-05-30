@@ -260,15 +260,17 @@ const DocumentPreview = () => {
             <Card>
               <CardContent className="p-0">
                 {document.content ? (
-                  <PDFViewer
-                    pdfData={document.content}
+                  <UniversalFileViewer
+                    fileData={document.content}
+                    fileName={document.title}
+                    mimeType="application/pdf"
                     fields={document.fields}
                     onFieldClick={handleFieldClick}
                     signingMode={signingMode}
                   />
                 ) : (
                   <div className="p-8 text-center">
-                    <p className="text-gray-600">No PDF content available for this document.</p>
+                    <p className="text-gray-600">No file content available for this document.</p>
                   </div>
                 )}
               </CardContent>
