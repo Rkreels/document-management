@@ -9,6 +9,26 @@ interface VoiceSettings {
   language: string;
   autoSpeak: boolean;
   interruptions: boolean;
+  speed: number;
+  trainingMode: boolean;
+  detailedGuidance: boolean;
+  contextualHelp: boolean;
+  fieldDescriptions: boolean;
+  smartPausing: boolean;
+  interactiveMode: boolean;
+}
+
+interface TrainingState {
+  isTrainingActive: boolean;
+  currentModule: string;
+  currentLesson: number;
+  completedLessons: string[];
+  trainingPreferences: {
+    autoProgress: boolean;
+    repeatInstructions: boolean;
+    detailedExplanations: boolean;
+    practiceMode: boolean;
+  };
 }
 
 interface VoiceContextType {
@@ -20,6 +40,7 @@ interface VoiceContextType {
   resume: () => void;
   isSupported: boolean;
   isSpeaking: boolean;
+  isPlaying: boolean;
   availableVoices: SpeechSynthesisVoice[];
   announcePageChange: (pageName: string, description?: string) => void;
   announceFieldFocus: (fieldType: string, fieldLabel?: string, isRequired?: boolean) => void;
@@ -33,6 +54,11 @@ interface VoiceContextType {
   updateVoiceTrainingProgress: (progress: Partial<VoiceTrainingProgress>) => void;
   startVoiceTraining: (moduleId: string) => void;
   completeVoiceTraining: (moduleId: string, score: number) => void;
+  repeatLastInstruction: () => void;
+  trainingState: TrainingState;
+  updateTrainingState: (state: Partial<TrainingState>) => void;
+  provideContextualHelp: (context: string, detailed?: boolean) => void;
+  announceFeatureIntroduction: (featureName: string, description: string, instruction: string) => void;
 }
 
 interface VoiceTrainingProgress {
@@ -61,6 +87,13 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     language: 'en-US',
     autoSpeak: true,
     interruptions: true,
+    speed: 1,
+    trainingMode: false,
+    detailedGuidance: true,
+    contextualHelp: true,
+    fieldDescriptions: true,
+    smartPausing: true,
+    interactiveMode: true,
   });
 
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -69,6 +102,20 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const speechQueue = useRef<Array<{ text: string; priority: string; interrupt: boolean }>>([]);
   const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
   const isProcessingQueue = useRef(false);
+  const lastInstruction = useRef<string>('');
+
+  const [trainingState, setTrainingState] = useState<TrainingState>({
+    isTrainingActive: false,
+    currentModule: '',
+    currentLesson: 0,
+    completedLessons: [],
+    trainingPreferences: {
+      autoProgress: true,
+      repeatInstructions: true,
+      detailedExplanations: true,
+      practiceMode: false,
+    }
+  });
 
   const [voiceTrainingProgress, setVoiceTrainingProgress] = useState<VoiceTrainingProgress>({
     completedModules: [],
@@ -122,7 +169,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     currentUtterance.current = utterance;
 
     // Configure utterance
-    utterance.rate = settings.rate;
+    utterance.rate = settings.rate || settings.speed;
     utterance.pitch = settings.pitch;
     utterance.volume = settings.volume;
     utterance.lang = settings.language;
@@ -184,6 +231,8 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const speak = useCallback((text: string, priority: 'low' | 'normal' | 'high' = 'normal', interrupt = false) => {
     if (!isSupported || !settings.enabled || !text.trim()) return;
 
+    lastInstruction.current = text;
+
     // Add to queue with priority handling
     if (priority === 'high') {
       speechQueue.current.unshift({ text, priority, interrupt: true });
@@ -215,6 +264,34 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       speechSynthesis.resume();
     }
   }, [isSupported]);
+
+  const repeatLastInstruction = useCallback(() => {
+    if (lastInstruction.current) {
+      speak(lastInstruction.current, 'high', true);
+    }
+  }, [speak]);
+
+  const updateTrainingState = useCallback((state: Partial<TrainingState>) => {
+    setTrainingState(prev => ({ ...prev, ...state }));
+  }, []);
+
+  const provideContextualHelp = useCallback((context: string, detailed = false) => {
+    const helpMessages = {
+      dashboard: 'Welcome to your dashboard! Here you can view all your documents, create new ones, and access training. Use the upload button to add new documents.',
+      editor: 'You are in the document editor. Add signature and text fields by clicking the appropriate buttons. Position fields where signers need to interact.',
+      signing: 'This is the signing interface. Complete all required fields to finish the document. Your signature will be legally binding.',
+      upload: 'Upload your PDF documents here. Only PDF files are supported. Make sure your document is ready before uploading.',
+      general: 'Use the voice assistant for guidance throughout the application. Press Ctrl+H for contextual help anytime.'
+    };
+
+    const message = helpMessages[context as keyof typeof helpMessages] || helpMessages.general;
+    speak(message, 'high', true);
+  }, [speak]);
+
+  const announceFeatureIntroduction = useCallback((featureName: string, description: string, instruction: string) => {
+    const fullMessage = `${featureName}: ${description} ${instruction}`;
+    speak(fullMessage, 'high', true);
+  }, [speak]);
 
   // Enhanced announcement functions
   const announcePageChange = useCallback((pageName: string, description?: string) => {
@@ -303,6 +380,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     resume,
     isSupported,
     isSpeaking,
+    isPlaying: isSpeaking,
     availableVoices,
     announcePageChange,
     announceFieldFocus,
@@ -316,6 +394,11 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     updateVoiceTrainingProgress,
     startVoiceTraining,
     completeVoiceTraining,
+    repeatLastInstruction,
+    trainingState,
+    updateTrainingState,
+    provideContextualHelp,
+    announceFeatureIntroduction,
   };
 
   return (
