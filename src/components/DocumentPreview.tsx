@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ import { VoiceAssistant } from '@/components/VoiceAssistant';
 import { DocumentHistory } from '@/components/DocumentHistory';
 import { DocumentComments } from '@/components/DocumentComments';
 import { DocumentSecurity } from '@/components/DocumentSecurity';
+import { UniversalFileViewer } from '@/components/UniversalFileViewer';
 
 const DocumentPreview = () => {
   const { documentId } = useParams();

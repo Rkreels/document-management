@@ -183,10 +183,10 @@ export const UniversalFileViewer: React.FC<UniversalFileViewerProps> = ({
   };
 
   const loadImage = async () => {
-    const img = new Image();
+    const img = document.createElement('img');
     const dataUrl = `data:${mimeType};base64,${fileData}`;
     
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       img.onload = () => {
         if (canvasRef.current) {
           const canvas = canvasRef.current;
@@ -198,9 +198,9 @@ export const UniversalFileViewer: React.FC<UniversalFileViewerProps> = ({
           }
         }
         setTotalPages(1);
-        resolve(null);
+        resolve();
       };
-      img.onerror = reject;
+      img.onerror = () => reject(new Error('Failed to load image'));
       img.src = dataUrl;
     });
   };
