@@ -74,12 +74,25 @@ const Dashboard = () => {
     setSelectedDocuments([]);
   };
 
+  // Create a sample document for the NotificationCenter
+  const sampleDocument = documents.length > 0 ? documents[0] : {
+    id: 'sample',
+    title: 'Sample Document',
+    content: '',
+    status: 'draft' as const,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    fields: [],
+    signers: [],
+    signingOrder: 'sequential' as const
+  };
+
   const renderMainContent = () => {
     switch (mainView) {
       case 'analytics':
         return <DocumentAnalytics />;
       case 'notifications':
-        return <NotificationCenter />;
+        return <NotificationCenter document={sampleDocument} />;
       case 'integrations':
         return <APIIntegration />;
       case 'branding':

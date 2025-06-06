@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -34,10 +35,10 @@ const TemplateEditor = () => {
     if (templateId) {
       if (currentTemplate) {
         setName(currentTemplate.name);
-        setDescription(currentTemplate.description);
+        setDescription(currentTemplate.description || '');
         setCategory(currentTemplate.category || '');
         setTags(currentTemplate.tags?.join(', ') || '');
-        setContent(currentTemplate.content);
+        setContent(currentTemplate.content || '');
         speak(`Editing template: ${currentTemplate.name}. You can modify the template details and fields.`, 'normal');
       } else {
         speak("Template not found. Taking you back to templates.", 'high');
@@ -73,7 +74,6 @@ const TemplateEditor = () => {
     }
 
     const templateData = {
-      title: name, // Add title property
       name,
       description,
       content,
@@ -81,8 +81,6 @@ const TemplateEditor = () => {
       tags: tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : undefined,
       fields: fields,
       signers: currentTemplate?.signers || [],
-      isPublic: false,
-      usageCount: 0,
     };
 
     if (templateId && currentTemplate) {
@@ -93,7 +91,9 @@ const TemplateEditor = () => {
       });
       speak("Template updated successfully!", 'high');
     } else {
-      const newTemplate = createTemplate(templateData);
+      const newTemplate = createTemplate(name, fields);
+      // Update with additional data
+      updateTemplate(newTemplate.id, templateData);
       navigate(`/template-editor/${newTemplate.id}`);
       toast({
         title: "Success",
@@ -240,7 +240,7 @@ const TemplateEditor = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Signers</p>
-                <p className="text-lg font-semibold">{currentTemplate.signers.length}</p>
+                <p className="text-lg font-semibold">{currentTemplate.signers?.length || 0}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Created</p>
