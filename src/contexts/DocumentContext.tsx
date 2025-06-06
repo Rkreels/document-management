@@ -56,7 +56,7 @@ export interface Signer {
   name: string;
   email: string;
   role: string;
-  status: 'pending' | 'signed' | 'declined';
+  status: 'pending' | 'sent' | 'signed' | 'declined';
   signedAt?: Date;
   order: number;
   canDelegate?: boolean;

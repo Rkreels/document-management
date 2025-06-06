@@ -131,12 +131,12 @@ const DocumentPreview = () => {
   const downloadDocument = () => {
     if (document?.content) {
       const dataUrl = `data:application/pdf;base64,${document.content}`;
-      const link = document.createElement('a');
+      const link = window.document.createElement('a');
       link.href = dataUrl;
       link.download = `${document.title}.pdf`;
-      document.body.appendChild(link);
+      window.document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
       speak('Document downloaded successfully', 'normal');
     }
   };
