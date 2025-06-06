@@ -115,6 +115,7 @@ export interface Signer {
   accessCode?: string;
   hostEmail?: string;
   privateMessage?: string;
+  delegatedTo?: string;
 }
 
 export interface Template {
@@ -126,6 +127,9 @@ export interface Template {
   usageCount: number;
   createdAt: Date;
   updatedAt: Date;
+  tags?: string[];
+  content?: string;
+  signers?: Signer[];
 }
 
 export interface Notification {
@@ -140,6 +144,7 @@ export interface Notification {
   status?: 'sent' | 'pending' | 'failed';
   recipientEmail?: string;
   timestamp?: Date;
+  sentAt?: Date;
 }
 
 export interface DocumentStats {
@@ -166,6 +171,7 @@ interface DocumentContextType {
   addField: (documentId: string, field: Omit<DocumentField, 'id'>) => void;
   updateField: (documentId: string, fieldId: string, updates: Partial<DocumentField>) => void;
   deleteField: (documentId: string, fieldId: string) => void;
+  removeField: (documentId: string, fieldId: string) => void;
   addSigner: (documentId: string, signer: Omit<Signer, 'id' | 'order'>) => void;
   updateSigner: (signerId: string, updates: Partial<Signer>) => void;
   removeSigner: (documentId: string, signerId: string) => void;
@@ -187,6 +193,8 @@ interface DocumentContextType {
   createNotification: (notification: Omit<Notification, 'id' | 'createdAt'>) => void;
   markNotificationAsRead: (id: string) => void;
   clearAllNotifications: () => void;
+  addTemplate: (template: Omit<Template, 'id' | 'usageCount' | 'createdAt' | 'updatedAt'>) => Template;
+  createDocumentFromTemplate: (templateId: string, title: string) => Document;
 }
 
 export const useDocument = () => useContext(DocumentContext) as DocumentContextType;
@@ -507,6 +515,10 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }));
   };
 
+  const removeField = (documentId: string, fieldId: string) => {
+    deleteField(documentId, fieldId);
+  };
+
   const addSigner = (documentId: string, signer: Omit<Signer, 'id' | 'order'>) => {
     const document = documents.find(doc => doc.id === documentId);
     if (!document) return;
@@ -612,33 +624,6 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
-  const getDocumentStats = (): DocumentStats => {
-    const total = documents.length;
-    const pending = documents.filter(d => d.status === 'sent' || d.status === 'in-progress').length;
-    const completed = documents.filter(d => d.status === 'completed').length;
-    const declined = documents.filter(d => d.status === 'declined').length;
-    const expired = documents.filter(d => d.status === 'expired').length;
-    
-    // Calculate average completion time
-    const completedDocs = documents.filter(d => d.status === 'completed' && d.completedAt && d.sentAt);
-    const avgTime = completedDocs.length > 0 
-      ? completedDocs.reduce((sum, doc) => {
-          const sentTime = doc.sentAt?.getTime() || 0;
-          const completedTime = doc.completedAt?.getTime() || 0;
-          return sum + (completedTime - sentTime);
-        }, 0) / completedDocs.length / (1000 * 60 * 60 * 24) // Convert to days
-      : 0;
-
-    return {
-      total,
-      pending,
-      completed,
-      declined,
-      expired,
-      averageCompletionTime: avgTime
-    };
-  };
-
   const createTemplate = (name: string, fields: DocumentField[]): Template => {
     const newTemplate: Template = {
       id: Date.now().toString(),
@@ -688,6 +673,37 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setNotifications([]);
   };
 
+  const addTemplate = (template: Omit<Template, 'id' | 'usageCount' | 'createdAt' | 'updatedAt'>): Template => {
+    const newTemplate: Template = {
+      ...template,
+      id: Date.now().toString(),
+      usageCount: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    setTemplates(prev => [...prev, newTemplate]);
+    return newTemplate;
+  };
+
+  const createDocumentFromTemplate = (templateId: string, title: string): Document => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) throw new Error('Template not found');
+    
+    const newDocument = createDocument(title, template.content);
+    updateDocument(newDocument.id, {
+      fields: template.fields.map(field => ({
+        ...field,
+        id: Date.now().toString() + Math.random()
+      })),
+      signers: template.signers || []
+    });
+    
+    // Increment template usage count
+    updateTemplate(templateId, { usageCount: template.usageCount + 1 });
+    
+    return newDocument;
+  };
+
   const value = {
     documents,
     templates,
@@ -701,6 +717,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     addField,
     updateField,
     deleteField,
+    removeField,
     addSigner,
     updateSigner,
     removeSigner,
@@ -721,7 +738,9 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     addNotification,
     createNotification,
     markNotificationAsRead,
-    clearAllNotifications
+    clearAllNotifications,
+    addTemplate,
+    createDocumentFromTemplate
   };
 
   return (
