@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => ({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          ui: ['lucide-react', '@radix-ui/react-tabs', '@radix-ui/react-card']
+          ui: ['lucide-react', '@radix-ui/react-tabs']
         }
       }
     }
