@@ -161,7 +161,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ document
           message: newNotification.message,
           documentId: newNotification.documentId,
           recipientEmail: newNotification.recipientEmail,
-          status: newNotification.status,
+          status: 'sent', // Explicitly use 'sent' status which is allowed
         });
       });
     
