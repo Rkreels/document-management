@@ -1,54 +1,76 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { defaultTemplates } from '@/utils/defaultTemplates';
-
-export interface ValidationRule {
-  type: 'email' | 'phone' | 'number' | 'custom';
-  pattern?: string;
-  message?: string;
-}
-
-export interface ConditionalLogic {
-  dependsOn: string;
-  condition: 'equals' | 'not_equals' | 'contains';
-  value: string;
-  action: 'show' | 'hide' | 'require';
-}
-
-export interface ReminderSchedule {
-  enabled: boolean;
-  frequency: 'daily' | 'weekly';
-  customMessage?: string;
-  lastSent?: Date;
-}
-
-export interface NotificationSettings {
-  sendCopyToSender: boolean;
-  ccEmails?: string[];
-}
-
-export interface DelegatedTo {
-  name: string;
-  email: string;
-}
+import React, { createContext, useState, useEffect, useContext } from 'react';
 
 export interface DocumentField {
   id: string;
-  type: 'signature' | 'text' | 'date' | 'checkbox' | 'radio' | 'dropdown' | 'textarea' | 'number' | 'email' | 'formula' | 'attachment' | 'initial' | 'stamp';
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  page: number;
+  type: 'text' | 'signature' | 'date' | 'checkbox' | 'dropdown' | 'radio';
+  label: string;
+  required: boolean;
   value?: string | boolean;
-  label?: string;
-  required?: boolean;
-  signer?: string;
+  position: {
+    x: number;
+    y: number;
+  };
+  size: {
+    width: number;
+    height: number;
+  };
+  page: number;
   signerId?: string;
-  options?: string[];
-  formula?: string;
-  validation?: ValidationRule;
-  conditionalLogic?: ConditionalLogic;
   tooltip?: string;
+  validation?: {
+    type: 'regex' | 'date' | 'email' | 'phone';
+    pattern?: string;
+    message?: string;
+  };
+  options?: string[];
+}
+
+export interface Document {
+  id: string;
+  title: string;
+  content: string;
+  status: 'draft' | 'sent' | 'in-progress' | 'completed' | 'declined' | 'expired';
+  createdAt: Date;
+  updatedAt: Date;
+  completedAt?: Date;
+  expiresAt?: Date;
+  fields: DocumentField[];
+  signers: Signer[];
+  signingOrder: 'sequential' | 'parallel';
+  template?: {
+    id: string;
+    name: string;
+  };
+  tags?: string[];
+  folder?: string;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  reminderSettings?: {
+    enabled: boolean;
+    frequency: 'daily' | 'every-3-days' | 'weekly';
+    maxReminders: number;
+  };
+  security?: {
+    requireAuth: boolean;
+    allowPrinting: boolean;
+    allowDownload: boolean;
+    watermark: boolean;
+    ipRestriction: boolean;
+    allowedIPs?: string[];
+  };
+  audit?: {
+    views: number;
+    downloads: number;
+    lastViewed?: Date;
+    ipAddresses: string[];
+  };
+  branding?: {
+    logo?: string;
+    colors?: {
+      primary: string;
+      secondary: string;
+    };
+    customMessage?: string;
+  };
 }
 
 export interface Signer {
@@ -56,209 +78,193 @@ export interface Signer {
   name: string;
   email: string;
   role: string;
-  status: 'pending' | 'sent' | 'signed' | 'declined';
+  status: 'pending' | 'sent' | 'signed' | 'declined' | 'bounced';
   signedAt?: Date;
   order: number;
   canDelegate?: boolean;
-  requireAuth?: 'none' | 'email' | 'sms' | 'knowledge';
-  delegatedTo?: DelegatedTo;
-}
-
-export interface Document {
-  id: string;
-  title: string;
-  content: string;
-  status: 'draft' | 'sent' | 'completed' | 'voided' | 'declined' | 'expired';
-  signingOrder: 'parallel' | 'sequential';
-  createdAt: Date;
-  updatedAt: Date;
-  sentAt?: Date;
-  auditTrail: AuditEvent[];
-  fields: DocumentField[];
-  signers: Signer[];
-  expiresAt?: Date;
-  completedAt?: Date;
-  reminderSchedule?: ReminderSchedule;
-  notifications?: NotificationSettings;
-  security?: {
-    requireAuth: boolean;
-    allowPrinting: boolean;
-    allowDownload: boolean;
-  };
-}
-
-export interface AuditEvent {
-  id: string;
-  timestamp: Date;
-  action: string;
-  actor: string;
-  details: string;
+  requireAuth?: 'email' | 'sms' | 'knowledge' | 'id-verification';
+  language?: string;
+  timezone?: string;
+  reminderCount?: number;
+  lastReminder?: Date;
   ipAddress?: string;
+  deviceInfo?: string;
+  accessCode?: string;
+  hostEmail?: string;
+  privateMessage?: string;
 }
 
-export interface DocumentTemplate {
-  id: string;
-  title: string;
-  name: string;
-  description: string;
-  category?: string;
-  tags?: string[];
-  content: string;
-  fields: DocumentField[];
-  signers: Signer[];
-  createdAt: Date;
-  updatedAt: Date;
-  usageCount: number;
-  isPublic?: boolean;
-}
+export const DocumentContext = createContext<any>(null);
 
-export interface Notification {
-  id: string;
-  documentId: string;
-  type: 'reminder' | 'completion' | 'decline' | 'info' | 'success' | 'warning' | 'error';
-  title: string;
-  message: string;
-  timestamp: Date;
-  read: boolean;
-  status: 'sent' | 'delivered' | 'failed' | 'opened';
-  recipientEmail: string;
-  sentAt: Date;
-}
-
-export interface DocumentContextType {
+interface DocumentContextType {
   documents: Document[];
-  templates: DocumentTemplate[];
-  notifications: Notification[];
   currentDocument: Document | null;
-  setCurrentDocument: (document: Document | null) => void;
-  createDocument: (title: string, content: string) => Document;
+  createDocument: (title: string, content?: string) => Document;
   updateDocument: (id: string, updates: Partial<Document>) => void;
   deleteDocument: (id: string) => void;
-  addField: (field: Omit<DocumentField, 'id'>) => void;
-  updateField: (fieldId: string, updates: Partial<DocumentField>) => void;
-  removeField: (fieldId: string) => void;
-  addSigner: (signer: Omit<Signer, 'id'>) => void;
+  duplicateDocument: (id: string) => Document;
+  setCurrentDocument: (document: Document | null) => void;
+  addField: (documentId: string, field: Omit<DocumentField, 'id'>) => void;
+  updateField: (documentId: string, fieldId: string, updates: Partial<DocumentField>) => void;
+  deleteField: (documentId: string, fieldId: string) => void;
+  addSigner: (documentId: string, signer: Omit<Signer, 'id' | 'order'>) => void;
   updateSigner: (signerId: string, updates: Partial<Signer>) => void;
-  removeSigner: (signerId: string) => void;
-  sendDocument: (documentId: string, message?: string) => void;
-  uploadPDF: (file: File) => Promise<string>;
-  createTemplate: (template: Omit<DocumentTemplate, 'id' | 'createdAt' | 'updatedAt'>) => DocumentTemplate;
-  updateTemplate: (templateId: string, updates: Partial<DocumentTemplate>) => void;
-  deleteTemplate: (templateId: string) => void;
-  createDocumentFromTemplate: (templateId: string, title: string) => Document;
-  markNotificationAsRead: (notificationId: string) => void;
-  getDocumentStats: () => {
-    total: number;
-    completed: number;
-    pending: number;
-    draft: number;
-    averageCompletionTime: number;
-  };
-  duplicateDocument: (documentId: string) => Document;
-  sendReminder: (documentId: string) => void;
-  createNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => Notification;
-  addTemplate: (template: DocumentTemplate) => void;
+  removeSigner: (documentId: string, signerId: string) => void;
+  sendDocument: (documentId: string) => void;
+  sendReminder: (signerId: string) => void;
+  bulkSend: (documentIds: string[]) => void;
+  bulkDelete: (documentIds: string[]) => void;
+  bulkMove: (documentIds: string[], folder: string) => void;
+  bulkTag: (documentIds: string[], tags: string[]) => void;
+  getDocumentsByFolder: (folder: string) => Document[];
+  getDocumentsByTag: (tag: string) => Document[];
+  getDocumentsByStatus: (status: Document['status']) => Document[];
+  searchDocuments: (query: string) => Document[];
 }
 
-export const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
-
-export const useDocument = () => {
-  const context = useContext(DocumentContext);
-  if (!context) {
-    throw new Error('useDocument must be used within a DocumentProvider');
-  }
-  return context;
-};
+export const useDocument = () => useContext(DocumentContext) as DocumentContextType;
 
 export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
 
-  // Load data from localStorage on initial render
   useEffect(() => {
-    const savedDocuments = localStorage.getItem('documents');
-    const savedTemplates = localStorage.getItem('templates');
-    const savedNotifications = localStorage.getItem('notifications');
-
-    if (savedDocuments) {
-      try {
-        const parsedDocuments = JSON.parse(savedDocuments);
-        // Convert string dates back to Date objects
-        const documentsWithDates = parsedDocuments.map((doc: any) => ({
-          ...doc,
-          createdAt: new Date(doc.createdAt),
-          updatedAt: new Date(doc.updatedAt),
-          auditTrail: doc.auditTrail.map((event: any) => ({
-            ...event,
-            timestamp: new Date(event.timestamp)
-          })),
-          signers: doc.signers.map((signer: any) => ({
-            ...signer,
-            signedAt: signer.signedAt ? new Date(signer.signedAt) : undefined
-          }))
-        }));
-        setDocuments(documentsWithDates);
-      } catch (error) {
-        console.error('Error parsing documents from localStorage:', error);
-      }
-    }
-
-    if (savedTemplates) {
-      try {
-        const parsedTemplates = JSON.parse(savedTemplates);
-        const templatesWithDates = parsedTemplates.map((template: any) => ({
-          ...template,
-          createdAt: new Date(template.createdAt),
-          updatedAt: new Date(template.updatedAt)
-        }));
-        setTemplates(templatesWithDates);
-      } catch (error) {
-        console.error('Error parsing templates from localStorage:', error);
-      }
-    }
-
-    if (savedNotifications) {
-      try {
-        const parsedNotifications = JSON.parse(savedNotifications);
-        const notificationsWithDates = parsedNotifications.map((notification: any) => ({
-          ...notification,
-          timestamp: new Date(notification.timestamp)
-        }));
-        setNotifications(notificationsWithDates);
-      } catch (error) {
-        console.error('Error parsing notifications from localStorage:', error);
-      }
-    }
+    // Demo data
+    const initialDocuments: Document[] = [
+      {
+        id: '1',
+        title: 'Sample NDA',
+        content: 'JVBERi0xLjUKJcOiw6AKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4Kc3RhcnR4cmVmCjE1MgklRU9GCg==',
+        status: 'draft',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        fields: [
+          {
+            id: '101',
+            type: 'signature',
+            label: 'Signature',
+            required: true,
+            position: { x: 50, y: 100 },
+            size: { width: 150, height: 50 },
+            page: 1,
+            signerId: 'signer1'
+          },
+          {
+            id: '102',
+            type: 'text',
+            label: 'Name',
+            required: true,
+            position: { x: 50, y: 150 },
+            size: { width: 200, height: 30 },
+            page: 1,
+            signerId: 'signer1'
+          }
+        ],
+        signers: [
+          {
+            id: 'signer1',
+            name: 'John Doe',
+            email: 'john.doe@example.com',
+            role: 'Signer',
+            status: 'pending',
+            order: 1
+          }
+        ],
+	signingOrder: 'sequential'
+      },
+      {
+        id: '2',
+        title: 'Partnership Agreement',
+        content: 'JVBERi0xLjUKJcOiw6AKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4Kc3RhcnR4cmVmCjE1MgklRU9GCg==',
+        status: 'in-progress',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        fields: [
+          {
+            id: '201',
+            type: 'signature',
+            label: 'Partner 1 Signature',
+            required: true,
+            position: { x: 50, y: 100 },
+            size: { width: 150, height: 50 },
+            page: 1,
+            signerId: 'partner1'
+          },
+          {
+            id: '202',
+            type: 'signature',
+            label: 'Partner 2 Signature',
+            required: true,
+            position: { x: 50, y: 200 },
+            size: { width: 150, height: 50 },
+            page: 1,
+            signerId: 'partner2'
+          }
+        ],
+        signers: [
+          {
+            id: 'partner1',
+            name: 'Alice Smith',
+            email: 'alice.smith@example.com',
+            role: 'Partner',
+            status: 'signed',
+            order: 1,
+	    signedAt: new Date()
+          },
+          {
+            id: 'partner2',
+            name: 'Bob Johnson',
+            email: 'bob.johnson@example.com',
+            role: 'Partner',
+            status: 'pending',
+            order: 2
+          }
+        ],
+	signingOrder: 'sequential'
+      },
+    ];
+    setDocuments(initialDocuments);
   }, []);
 
-  // Helper function to generate unique IDs
-  const generateId = () => {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-  };
-
-  const createDocument = (title: string, content: string): Document => {
+  const createDocument = (title: string, content?: string): Document => {
     const newDocument: Document = {
-      id: `doc-${Date.now()}`,
+      id: Date.now().toString(),
       title,
-      content,
+      content: content || '',
       status: 'draft',
-      signingOrder: 'parallel',
       createdAt: new Date(),
       updatedAt: new Date(),
-      auditTrail: [],
       fields: [],
-      signers: []
+      signers: [],
+      signingOrder: 'sequential',
+      priority: 'normal',
+      reminderSettings: {
+        enabled: true,
+        frequency: 'daily',
+        maxReminders: 3
+      },
+      security: {
+        requireAuth: false,
+        allowPrinting: true,
+        allowDownload: true,
+        watermark: false,
+        ipRestriction: false
+      },
+      audit: {
+        views: 0,
+        downloads: 0,
+        ipAddresses: []
+      }
     };
-    
     setDocuments(prev => [...prev, newDocument]);
     return newDocument;
   };
 
   const updateDocument = (id: string, updates: Partial<Document>) => {
     setDocuments(prev => prev.map(doc => 
-      doc.id === id ? { ...doc, ...updates, updatedAt: new Date() } : doc
+      doc.id === id 
+        ? { ...doc, ...updates, updatedAt: new Date() }
+        : doc
     ));
     
     if (currentDocument?.id === id) {
@@ -273,311 +279,194 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const addField = (field: Omit<DocumentField, 'id'>) => {
-    if (!currentDocument) return;
+  const duplicateDocument = (id: string): Document => {
+    const original = documents.find(doc => doc.id === id);
+    if (!original) throw new Error('Document not found');
     
+    const duplicate = createDocument(`${original.title} (Copy)`, original.content);
+    updateDocument(duplicate.id, {
+      fields: original.fields.map(field => ({ ...field, id: Date.now().toString() + Math.random() })),
+      signers: original.signers.map(signer => ({ 
+        ...signer, 
+        id: Date.now().toString() + Math.random(),
+        status: 'pending' as const,
+        signedAt: undefined 
+      })),
+      signingOrder: original.signingOrder,
+      tags: original.tags,
+      folder: original.folder,
+      security: original.security,
+      reminderSettings: original.reminderSettings
+    });
+    
+    return duplicate;
+  };
+
+  const addField = (documentId: string, field: Omit<DocumentField, 'id'>) => {
     const newField: DocumentField = {
-      ...field,
-      id: `field-${Date.now()}`
+      id: Date.now().toString(),
+      ...field
     };
-    
-    updateDocument(currentDocument.id, {
-      fields: [...currentDocument.fields, newField]
+
+    updateDocument(documentId, {
+      fields: [...documents.find(doc => doc.id === documentId)?.fields || [], newField]
     });
   };
 
-  const updateField = (fieldId: string, updates: Partial<DocumentField>) => {
-    if (!currentDocument) return;
-    
-    updateDocument(currentDocument.id, {
-      fields: currentDocument.fields.map(field =>
-        field.id === fieldId ? { ...field, ...updates } : field
-      )
-    });
+  const updateField = (documentId: string, fieldId: string, updates: Partial<DocumentField>) => {
+    setDocuments(prev => prev.map(doc => {
+      if (doc.id === documentId) {
+        return {
+          ...doc,
+          fields: doc.fields.map(field =>
+            field.id === fieldId ? { ...field, ...updates } : field
+          )
+        };
+      }
+      return doc;
+    }));
   };
 
-  const removeField = (fieldId: string) => {
-    if (!currentDocument) return;
-    
-    updateDocument(currentDocument.id, {
-      fields: currentDocument.fields.filter(field => field.id !== fieldId)
-    });
+  const deleteField = (documentId: string, fieldId: string) => {
+    setDocuments(prev => prev.map(doc => {
+      if (doc.id === documentId) {
+        return {
+          ...doc,
+          fields: doc.fields.filter(field => field.id !== fieldId)
+        };
+      }
+      return doc;
+    }));
   };
 
-  const addSigner = (signer: Omit<Signer, 'id'>) => {
-    if (!currentDocument) return;
-    
+  const addSigner = (documentId: string, signer: Omit<Signer, 'id' | 'order'>) => {
+    const document = documents.find(doc => doc.id === documentId);
+    if (!document) return;
+
     const newSigner: Signer = {
       ...signer,
-      id: `signer-${Date.now()}`
+      id: Date.now().toString(),
+      order: document.signers.length + 1,
+      status: 'pending',
+      reminderCount: 0
     };
-    
-    updateDocument(currentDocument.id, {
-      signers: [...currentDocument.signers, newSigner]
+
+    updateDocument(documentId, {
+      signers: [...document.signers, newSigner]
     });
   };
 
   const updateSigner = (signerId: string, updates: Partial<Signer>) => {
-    if (!currentDocument) return;
-    
-    updateDocument(currentDocument.id, {
-      signers: currentDocument.signers.map(signer =>
+    setDocuments(prev => prev.map(doc => ({
+      ...doc,
+      signers: doc.signers.map(signer =>
         signer.id === signerId ? { ...signer, ...updates } : signer
       )
+    })));
+  };
+
+  const removeSigner = (documentId: string, signerId: string) => {
+    const document = documents.find(doc => doc.id === documentId);
+    if (!document) return;
+
+    updateDocument(documentId, {
+      signers: document.signers.filter(signer => signer.id !== signerId),
+      fields: document.fields.filter(field => field.signerId !== signerId)
     });
   };
 
-  const removeSigner = (signerId: string) => {
-    if (!currentDocument) return;
-    
-    updateDocument(currentDocument.id, {
-      signers: currentDocument.signers.filter(signer => signer.id !== signerId)
-    });
-  };
+  const sendDocument = (documentId: string) => {
+    const document = documents.find(doc => doc.id === documentId);
+    if (!document) return;
 
-  const sendDocument = (documentId: string, message?: string) => {
+    // Mark first signer as sent if sequential, all signers if parallel
+    const updatedSigners = document.signers.map((signer, index) => {
+      if (document.signingOrder === 'sequential') {
+        return index === 0 ? { ...signer, status: 'sent' as const } : signer;
+      } else {
+        return { ...signer, status: 'sent' as const };
+      }
+    });
+
     updateDocument(documentId, {
       status: 'sent',
-      sentAt: new Date()
-    });
-    
-    createNotification({
-      documentId,
-      type: 'reminder',
-      title: 'Reminder Sent',
-      message: message || 'Document has been sent for signing',
-      status: 'sent',
-      recipientEmail: 'recipient@example.com',
-      sentAt: new Date()
+      signers: updatedSigners
     });
   };
 
-  const uploadPDF = async (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        const base64Data = base64.split(',')[1];
-        resolve(base64Data);
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file);
+  const sendReminder = (signerId: string) => {
+    updateSigner(signerId, {
+      reminderCount: (documents.find(doc => 
+        doc.signers.find(s => s.id === signerId)
+      )?.signers.find(s => s.id === signerId)?.reminderCount || 0) + 1,
+      lastReminder: new Date()
     });
   };
 
-  const createTemplate = (template: Omit<DocumentTemplate, 'id' | 'createdAt' | 'updatedAt'>): DocumentTemplate => {
-    const newTemplate: DocumentTemplate = {
-      ...template,
-      id: `template-${Date.now()}`,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    setTemplates(prev => [...prev, newTemplate]);
-    return newTemplate;
+  const bulkSend = (documentIds: string[]) => {
+    documentIds.forEach(id => sendDocument(id));
   };
 
-  const updateTemplate = (templateId: string, updates: Partial<DocumentTemplate>) => {
-    setTemplates(prev => prev.map(template =>
-      template.id === templateId ? { ...template, ...updates, updatedAt: new Date() } : template
-    ));
+  const bulkDelete = (documentIds: string[]) => {
+    documentIds.forEach(id => deleteDocument(id));
   };
 
-  const deleteTemplate = (templateId: string) => {
-    setTemplates(prev => prev.filter(template => template.id !== templateId));
+  const bulkMove = (documentIds: string[], folder: string) => {
+    documentIds.forEach(id => updateDocument(id, { folder }));
   };
 
-  const createDocumentFromTemplate = (templateId: string, title: string): Document => {
-    const template = templates.find(t => t.id === templateId);
-    if (!template) throw new Error('Template not found');
-    
-    const newDocument = createDocument(title, template.content);
-    updateDocument(newDocument.id, {
-      fields: template.fields,
-      signers: template.signers
-    });
-    
-    return newDocument;
+  const bulkTag = (documentIds: string[], tags: string[]) => {
+    documentIds.forEach(id => updateDocument(id, { tags }));
   };
 
-  const markNotificationAsRead = (notificationId: string) => {
-    setNotifications(prev => prev.map(notification =>
-      notification.id === notificationId ? { ...notification, read: true } : notification
-    ));
+  const getDocumentsByFolder = (folder: string) => {
+    return documents.filter(doc => doc.folder === folder);
   };
 
-  const getDocumentStats = () => {
-    const total = documents.length;
-    const completed = documents.filter(doc => doc.status === 'completed').length;
-    const pending = documents.filter(doc => doc.status === 'sent').length;
-    const draft = documents.filter(doc => doc.status === 'draft').length;
-    
-    const completedDocs = documents.filter(doc => doc.status === 'completed' && doc.sentAt && doc.completedAt);
-    const averageCompletionTime = completedDocs.length > 0 
-      ? completedDocs.reduce((acc, doc) => {
-          const timeDiff = doc.completedAt!.getTime() - doc.sentAt!.getTime();
-          return acc + (timeDiff / (1000 * 60 * 60 * 24)); // Convert to days
-        }, 0) / completedDocs.length
-      : 0;
-
-    return {
-      total,
-      completed,
-      pending,
-      draft,
-      averageCompletionTime
-    };
+  const getDocumentsByTag = (tag: string) => {
+    return documents.filter(doc => doc.tags?.includes(tag));
   };
 
-  const duplicateDocument = (documentId: string): Document => {
-    const originalDoc = documents.find(doc => doc.id === documentId);
-    if (!originalDoc) throw new Error('Document not found');
-    
-    const duplicatedDoc = createDocument(`${originalDoc.title} (Copy)`, originalDoc.content);
-    updateDocument(duplicatedDoc.id, {
-      fields: originalDoc.fields.map(field => ({ ...field, id: `field-${Date.now()}-${Math.random()}` })),
-      signers: originalDoc.signers.map(signer => ({ ...signer, id: `signer-${Date.now()}-${Math.random()}`, status: 'pending' as const }))
-    });
-    
-    return duplicatedDoc;
+  const getDocumentsByStatus = (status: Document['status']) => {
+    return documents.filter(doc => doc.status === status);
   };
 
-  const sendReminder = (documentId: string) => {
-    const document = documents.find(doc => doc.id === documentId);
-    
-    if (document) {
-      createNotification({
-        documentId,
-        type: 'reminder',
-        title: 'Reminder Sent',
-        message: `Reminder sent for document "${document.title}"`,
-        status: 'sent',
-        recipientEmail: 'recipient@example.com',
-        sentAt: new Date()
-      });
-    }
+  const searchDocuments = (query: string) => {
+    const lowerQuery = query.toLowerCase();
+    return documents.filter(doc => 
+      doc.title.toLowerCase().includes(lowerQuery) ||
+      doc.signers.some(signer => 
+        signer.name.toLowerCase().includes(lowerQuery) ||
+        signer.email.toLowerCase().includes(lowerQuery)
+      ) ||
+      doc.tags?.some(tag => tag.toLowerCase().includes(lowerQuery))
+    );
   };
 
-  const createNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>): Notification => {
-    const newNotification: Notification = {
-      ...notification,
-      id: `notification-${Date.now()}`,
-      timestamp: new Date(),
-      read: false
-    };
-    
-    setNotifications(prev => [...prev, newNotification]);
-    return newNotification;
-  };
-
-  // Initialize with demo data
-  useEffect(() => {
-    const demoDocument: Document = {
-      id: 'sample-doc-1',
-      title: 'Sample Employment Contract',
-      content: 'JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPJ4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9GMSA0IDAgUgo+Pgo+PgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNSAwIFIKPj4KZW5kb2JqCjQgMCBvYmoKPDwKL1R5cGUgL0ZvbnQKL1N1YnR5cGUgL1R5cGUxCi9CYXNlRm9udCAvSGVsdmV0aWNhCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9MZW5ndGggNDQKPj4Kc3RyZWFtCkJUCi9GMSA4IFRmCjEwMCA3MDAgVGQKKFNhbXBsZSBEb2N1bWVudCkgVGoKRVQKZW5kc3RyZWFtCmVuZG9iago6cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDAw1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDUgMDAwMDAgbiAKMDAwMDAwMDMxMiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjQwNQolJUVPRg==',
-      status: 'draft',
-      signingOrder: 'parallel',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      auditTrail: [],
-      fields: [
-        {
-          id: 'field-1',
-          type: 'signature',
-          x: 10,
-          y: 80,
-          width: 25,
-          height: 8,
-          page: 1,
-          required: true,
-          label: 'Signature',
-          signer: 'signer-1',
-          signerId: 'signer-1'
-        },
-        {
-          id: 'field-2',
-          type: 'text',
-          x: 40,
-          y: 80,
-          width: 20,
-          height: 6,
-          page: 1,
-          required: true,
-          label: 'Full Name',
-          signer: 'signer-1',
-          signerId: 'signer-1'
-        },
-        {
-          id: 'field-3',
-          type: 'date',
-          x: 70,
-          y: 80,
-          width: 15,
-          height: 6,
-          page: 1,
-          required: true,
-          label: 'Date',
-          signer: 'signer-1',
-          signerId: 'signer-1'
-        }
-      ],
-      signers: [
-        {
-          id: 'signer-1',
-          name: 'John Doe',
-          email: 'john.doe@example.com',
-          role: 'Employee',
-          status: 'pending',
-          order: 1
-        }
-      ]
-    };
-
-    setDocuments([demoDocument]);
-    setCurrentDocument(demoDocument);
-  }, []);
-
-  // Initialize default templates if none exist
-  useEffect(() => {
-    if (templates.length === 0) {
-      defaultTemplates.forEach(template => {
-        addTemplate(template);
-      });
-    }
-  }, []);
-
-  const addTemplate = (template: DocumentTemplate) => {
-    setTemplates(prev => [...prev, template]);
-  };
-
-  const value: DocumentContextType = {
+  const value = {
     documents,
-    templates,
-    notifications,
     currentDocument,
-    setCurrentDocument,
     createDocument,
     updateDocument,
     deleteDocument,
+    duplicateDocument,
+    setCurrentDocument,
     addField,
     updateField,
-    removeField,
+    deleteField,
     addSigner,
     updateSigner,
     removeSigner,
     sendDocument,
-    uploadPDF,
-    createTemplate,
-    updateTemplate,
-    deleteTemplate,
-    createDocumentFromTemplate,
-    markNotificationAsRead,
-    getDocumentStats,
-    duplicateDocument,
     sendReminder,
-    createNotification,
-    addTemplate
+    bulkSend,
+    bulkDelete,
+    bulkMove,
+    bulkTag,
+    getDocumentsByFolder,
+    getDocumentsByTag,
+    getDocumentsByStatus,
+    searchDocuments
   };
 
   return (
@@ -586,5 +475,3 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     </DocumentContext.Provider>
   );
 };
-
-export default DocumentProvider;

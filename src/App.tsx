@@ -15,12 +15,16 @@ import TemplateEditor from '@/pages/TemplateEditor';
 import SigningPage from '@/pages/SigningPage';
 import VoiceTrainingPage from '@/pages/VoiceTraining';
 import NotFound from '@/pages/NotFound';
+import { DocumentRouter } from '@/components/DocumentRouter';
 
 function App() {
+  // Support for hosting at subdirectory
+  const basename = import.meta.env.VITE_BASE_URL || '';
+
   return (
     <VoiceProvider>
       <DocumentProvider>
-        <Router>
+        <Router basename={basename}>
           <div className="App">
             <Routes>
               <Route path="/" element={<Index />} />
@@ -28,6 +32,8 @@ function App() {
               <Route path="/editor" element={<DocumentEditor />} />
               <Route path="/editor/:documentId" element={<DocumentEditor />} />
               <Route path="/preview/:documentId" element={<DocumentPreview />} />
+              <Route path="/document/:documentId" element={<DocumentRouter />} />
+              <Route path="/document/:documentId/:signerId" element={<DocumentRouter />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/templates" element={<Templates />} />
               <Route path="/template-editor" element={<TemplateEditor />} />

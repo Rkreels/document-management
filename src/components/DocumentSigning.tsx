@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { CheckCircle, Clock, User, FileText, Send, AlertCircle, HelpCircle } from 'lucide-react';
 import { useDocument, Document, DocumentField, Signer } from '@/contexts/DocumentContext';
 import { useVoice } from '@/contexts/VoiceContext';
-import { PDFViewer } from './PDFViewer';
+import { UniversalFileViewer } from './UniversalFileViewer';
 import { SignaturePad } from './SignaturePad';
 import { TextFieldInput } from './TextFieldInput';
 
@@ -178,70 +179,7 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
     } else if (field.type === 'checkbox') {
       const newValue = field.value === 'true' ? 'false' : 'true';
       handleFieldComplete(field.id, newValue);
-    } else if (field.type === 'dropdown' || field.type === 'radio') {
-      speak(`This is a ${field.type} field. Click to open the options and select your choice.`, 'normal');
     }
-  };
-
-  const handleKeyboardNavigation = (e: React.KeyboardEvent) => {
-    if (!settings.enabled) return;
-
-    switch (e.key) {
-      case 'ArrowRight':
-      case 'Tab':
-        e.preventDefault();
-        if (currentFieldIndex < signerFields.length - 1) {
-          const nextIndex = currentFieldIndex + 1;
-          setCurrentFieldIndex(nextIndex);
-          const nextField = signerFields[nextIndex];
-          announceFieldFocus(nextField.type, nextField.label, nextField.required);
-        } else {
-          speak('You have reached the last field.', 'normal');
-        }
-        break;
-      case 'ArrowLeft':
-        e.preventDefault();
-        if (currentFieldIndex > 0) {
-          const prevIndex = currentFieldIndex - 1;
-          setCurrentFieldIndex(prevIndex);
-          const prevField = signerFields[prevIndex];
-          announceFieldFocus(prevField.type, prevField.label, prevField.required);
-        } else {
-          speak('You are at the first field.', 'normal');
-        }
-        break;
-      case 'Enter':
-        e.preventDefault();
-        const currentField = signerFields[currentFieldIndex];
-        if (currentField) {
-          handleFieldClick(currentField);
-        }
-        break;
-      case 'h':
-      case 'H':
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          provideContextualHelp();
-        }
-        break;
-    }
-  };
-
-  const provideContextualHelp = () => {
-    const canSign = completedFields.length === requiredFields.length;
-    const currentField = signerFields[currentFieldIndex];
-    
-    let helpMessage = `Document signing help. ${completedFields.length} of ${requiredFields.length} required fields are completed. `;
-    
-    if (canSign) {
-      helpMessage += 'All required fields are complete. You can now sign the document by clicking the Sign Document button.';
-    } else if (currentField) {
-      helpMessage += `Current field: ${currentField.type} ${currentField.label ? 'for ' + currentField.label : ''}. Press Enter to interact with this field.`;
-    }
-    
-    helpMessage += ' Use Tab or right arrow to move to the next field, left arrow for previous field. Press Ctrl+H for help at any time.';
-    
-    speak(helpMessage, 'high');
   };
 
   const canSign = completedFields.length === requiredFields.length;
@@ -249,7 +187,7 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
   const currentField = signerFields[currentFieldIndex];
 
   return (
-    <div className="space-y-6" onKeyDown={handleKeyboardNavigation} tabIndex={0}>
+    <div className="space-y-6" tabIndex={0}>
       {/* Progress Header */}
       <Card>
         <CardHeader>
@@ -332,11 +270,14 @@ export const DocumentSigning: React.FC<DocumentSigningProps> = ({
       {/* PDF Viewer */}
       <Card>
         <CardContent className="p-0">
-          <PDFViewer
-            pdfData={document.content}
+          <UniversalFileViewer
+            fileData={document.content}
+            fileName={document.title}
+            mimeType="application/pdf"
             fields={document.fields}
             onFieldClick={handleFieldClick}
             signingMode={true}
+            viewMode="signing"
           />
         </CardContent>
       </Card>
