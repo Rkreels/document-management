@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -133,7 +132,6 @@ export const DocumentSender: React.FC<DocumentSenderProps> = ({
       reminderSchedule: {
         enabled: sendingSettings.enableReminders,
         frequency: sendingSettings.reminderFrequency,
-        maxReminders: sendingSettings.maxReminders,
         customMessage: sendingSettings.message,
       },
       notifications: {

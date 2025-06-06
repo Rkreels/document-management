@@ -51,7 +51,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ document
       type: 'email',
       title: 'Document Sent',
       message: 'Contract sent to John Doe for signature',
-      status: 'delivered',
+      status: 'sent',
       recipientEmail: 'john@example.com',
       sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
       read: true,
@@ -156,7 +156,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ document
         
         setNotifications(prev => [newNotification, ...prev]);
         createNotification({
-          type: newNotification.type,
+          type: 'reminder',
           title: newNotification.title,
           message: newNotification.message,
           documentId: newNotification.documentId,
