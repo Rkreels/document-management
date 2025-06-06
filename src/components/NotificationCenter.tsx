@@ -162,6 +162,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ document
           documentId: newNotification.documentId,
           recipientEmail: newNotification.recipientEmail,
           status: 'sent', // Explicitly use 'sent' status which is allowed
+          read: false, // Add the missing required 'read' property
         });
       });
     
