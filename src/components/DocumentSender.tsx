@@ -44,7 +44,6 @@ export const DocumentSender: React.FC<DocumentSenderProps> = ({
     subject: `Please sign: ${document.title}`,
     message: 'Please review and sign the attached document at your earliest convenience.',
     ccEmails: '',
-    bccEmails: '',
     language: 'en',
     
     // Delivery settings
@@ -60,7 +59,7 @@ export const DocumentSender: React.FC<DocumentSenderProps> = ({
     
     // Reminder settings
     enableReminders: true,
-    reminderFrequency: 'daily' as 'daily' | 'every-2-days' | 'weekly',
+    reminderFrequency: 'daily' as 'daily' | 'weekly',
     maxReminders: 3,
     
     // Workflow settings
@@ -140,30 +139,18 @@ export const DocumentSender: React.FC<DocumentSenderProps> = ({
       notifications: {
         sendCopyToSender: true,
         ccEmails: sendingSettings.ccEmails ? sendingSettings.ccEmails.split(',').map(email => email.trim()) : undefined,
-        bccEmails: sendingSettings.bccEmails ? sendingSettings.bccEmails.split(',').map(email => email.trim()) : undefined,
-        notifyOnView: sendingSettings.notifyOnView,
-        notifyOnSign: sendingSettings.notifyOnSign,
-        notifyOnComplete: sendingSettings.notifyOnComplete,
-        notifyOnDecline: sendingSettings.notifyOnDecline,
       },
       security: {
         requireAuth: sendingSettings.requireAuth,
-        authMethod: sendingSettings.authMethod,
-        preventForwarding: sendingSettings.preventForwarding,
-        requireDeclineReason: sendingSettings.requireDeclineReason,
         allowPrinting: true,
         allowDownload: true,
         watermark: false,
         ipRestriction: false,
       },
-      workflow: {
-        enableParallelSigning: sendingSettings.enableParallelSigning,
-        requireWitness: sendingSettings.requireWitness,
-        requireNotary: sendingSettings.requireNotary,
-      },
       branding: {
-        enableBrandedExperience: sendingSettings.enableBrandedExperience,
-        customRedirectUrl: sendingSettings.customRedirectUrl,
+        logo: sendingSettings.enableBrandedExperience ? sendingSettings.customRedirectUrl : undefined,
+        colors: sendingSettings.enableBrandedExperience ? { primary: '#0066cc', secondary: '#f0f0f0' } : undefined,
+        customMessage: sendingSettings.message,
       }
     });
 
@@ -307,12 +294,12 @@ export const DocumentSender: React.FC<DocumentSenderProps> = ({
                 </div>
 
                 <div>
-                  <Label htmlFor="bccEmails">BCC Recipients (Optional)</Label>
+                  <Label htmlFor="customRedirectUrl">Custom Redirect URL (Optional)</Label>
                   <Input
-                    id="bccEmails"
-                    value={sendingSettings.bccEmails}
-                    onChange={(e) => setSendingSettings(prev => ({ ...prev, bccEmails: e.target.value }))}
-                    placeholder="admin@company.com"
+                    id="customRedirectUrl"
+                    value={sendingSettings.customRedirectUrl}
+                    onChange={(e) => setSendingSettings(prev => ({ ...prev, customRedirectUrl: e.target.value }))}
+                    placeholder="https://yourcompany.com/thank-you"
                   />
                 </div>
               </div>
@@ -487,17 +474,6 @@ export const DocumentSender: React.FC<DocumentSenderProps> = ({
                       onCheckedChange={(checked) => setSendingSettings(prev => ({ ...prev, enableBrandedExperience: checked }))}
                     />
                   </div>
-
-                  {sendingSettings.enableBrandedExperience && (
-                    <div>
-                      <Label>Custom Redirect URL</Label>
-                      <Input
-                        value={sendingSettings.customRedirectUrl}
-                        onChange={(e) => setSendingSettings(prev => ({ ...prev, customRedirectUrl: e.target.value }))}
-                        placeholder="https://yourcompany.com/thank-you"
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
             </CardContent>
@@ -622,7 +598,6 @@ export const DocumentSender: React.FC<DocumentSenderProps> = ({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="daily">Daily</SelectItem>
-                            <SelectItem value="every-2-days">Every 2 days</SelectItem>
                             <SelectItem value="weekly">Weekly</SelectItem>
                           </SelectContent>
                         </Select>

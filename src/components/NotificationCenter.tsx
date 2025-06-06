@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Bell, Mail, MessageSquare, Settings, Send, Clock, 
   Smartphone, Globe, Users, Shield, Zap, AlertTriangle,
-  CheckCircle, Info, Calendar, Phone, Slack
+  CheckCircle, Info, Calendar, Phone, Slack, BarChart3
 } from 'lucide-react';
 import { useDocument, Document } from '@/contexts/DocumentContext';
 import { useVoice } from '@/contexts/VoiceContext';
@@ -31,6 +31,7 @@ interface NotificationEvent {
   recipientEmail: string;
   sentAt: Date;
   read: boolean;
+  documentId: string;
   metadata?: {
     deliveryTime?: number;
     clickCount?: number;
@@ -54,6 +55,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ document
       recipientEmail: 'john@example.com',
       sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
       read: true,
+      documentId: document.id,
       metadata: { deliveryTime: 1.2, clickCount: 2, ipAddress: '192.168.1.1' }
     },
     {
@@ -65,6 +67,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ document
       recipientEmail: 'alice@example.com',
       sentAt: new Date(Date.now() - 30 * 60 * 1000),
       read: false,
+      documentId: document.id,
       metadata: { deliveryTime: 0.3 }
     }
   ]);
@@ -147,11 +150,19 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ document
           recipientEmail: signer.email,
           sentAt: new Date(),
           read: false,
+          documentId: document.id,
           metadata: { deliveryTime: 0, clickCount: 0 }
         };
         
         setNotifications(prev => [newNotification, ...prev]);
-        createNotification(newNotification);
+        createNotification({
+          type: newNotification.type,
+          title: newNotification.title,
+          message: newNotification.message,
+          documentId: newNotification.documentId,
+          recipientEmail: newNotification.recipientEmail,
+          status: newNotification.status,
+        });
       });
     
     speak('Bulk reminders sent via multiple channels with comprehensive tracking enabled', 'high');
