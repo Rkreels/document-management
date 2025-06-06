@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useVoice } from '@/contexts/VoiceContext';
-import { useDocument, DocumentTemplate } from '@/contexts/DocumentContext';
+import { useDocument, DocumentTemplate, DocumentField } from '@/contexts/DocumentContext';
 
 const TemplateEditor = () => {
   const { templateId } = useParams();
@@ -22,6 +22,9 @@ const TemplateEditor = () => {
   const [category, setCategory] = useState('');
   const [tags, setTags] = useState('');
   const [content, setContent] = useState('');
+  const [selectedFieldType, setSelectedFieldType] = useState('');
+  const [selectedSigner, setSelectedSigner] = useState('');
+  const [fields, setFields] = useState<DocumentField[]>([]);
 
   const currentTemplate = templateId ? templates.find(t => t.id === templateId) : null;
 
@@ -76,7 +79,7 @@ const TemplateEditor = () => {
       content,
       category: category || undefined,
       tags: tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : undefined,
-      fields: currentTemplate?.fields || [],
+      fields: fields,
       signers: currentTemplate?.signers || [],
       isPublic: false,
       usageCount: 0,
@@ -112,6 +115,33 @@ const TemplateEditor = () => {
         speak("Template deleted successfully! Taking you back to templates.", 'high');
       }
     }
+  };
+
+  const handleAddField = () => {
+    if (!selectedFieldType) return;
+    
+    const newField: Omit<DocumentField, 'id'> = {
+      type: selectedFieldType as DocumentField['type'],
+      x: 10,
+      y: 10,
+      width: 15,
+      height: 6,
+      position: {
+        x: 10,
+        y: 10
+      },
+      size: {
+        width: 15,
+        height: 6
+      },
+      page: 1,
+      signerId: selectedSigner || undefined,
+      required: true,
+      label: `${selectedFieldType} field`,
+    };
+    
+    setFields(prev => [...prev, { ...newField, id: Date.now().toString() }]);
+    setSelectedFieldType('');
   };
 
   return (

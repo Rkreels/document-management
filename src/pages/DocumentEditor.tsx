@@ -137,13 +137,21 @@ const DocumentEditor = () => {
       y: 10,
       width: 15,
       height: 6,
+      position: {
+        x: 10,
+        y: 10
+      },
+      size: {
+        width: 15,
+        height: 6
+      },
       page: 1,
       signerId: selectedSigner || undefined,
       required: true,
       label: `${selectedFieldType} field`,
     };
     
-    document.addField(newField);
+    document.addField(document.currentDocument.id, newField);
     setSelectedFieldType('');
     speak(`${newField.type} field added. Click on it to configure advanced properties.`, 'normal');
   };
@@ -153,15 +161,15 @@ const DocumentEditor = () => {
   };
 
   const handleFieldUpdate = (updates: Partial<DocumentField>) => {
-    if (editingField) {
-      document.updateField(editingField.id, updates);
+    if (editingField && document.currentDocument) {
+      document.updateField(document.currentDocument.id, editingField.id, updates);
       setEditingField(null);
     }
   };
 
   const handleFieldDelete = () => {
-    if (editingField) {
-      document.removeField(editingField.id);
+    if (editingField && document.currentDocument) {
+      document.removeField(document.currentDocument.id, editingField.id);
       setEditingField(null);
     }
   };

@@ -41,7 +41,7 @@ export const ComprehensiveDocumentManager: React.FC<ComprehensiveDocumentManager
     allowDownload: true,
     watermark: false,
     ipRestriction: false,
-    allowedIPs: ''
+    allowedIPs: [] as string[]
   });
 
   const [expirationSettings, setExpirationSettings] = useState({
@@ -364,8 +364,11 @@ export const ComprehensiveDocumentManager: React.FC<ComprehensiveDocumentManager
                       <Label>Allowed IP Addresses</Label>
                       <Textarea
                         placeholder="Enter IP addresses (one per line)"
-                        value={securitySettings.allowedIPs}
-                        onChange={(e) => setSecuritySettings(prev => ({ ...prev, allowedIPs: e.target.value }))}
+                        value={securitySettings.allowedIPs.join('\n')}
+                        onChange={(e) => setSecuritySettings(prev => ({ 
+                          ...prev, 
+                          allowedIPs: e.target.value.split('\n').filter(ip => ip.trim()) 
+                        }))}
                       />
                     </div>
                   )}
