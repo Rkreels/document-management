@@ -3,7 +3,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 
 export interface DocumentField {
   id: string;
-  type: 'text' | 'signature' | 'date' | 'checkbox' | 'dropdown' | 'radio';
+  type: 'text' | 'signature' | 'date' | 'checkbox' | 'dropdown' | 'radio' | 'textarea' | 'number' | 'email' | 'formula' | 'attachment' | 'initial' | 'stamp';
   label: string;
   required: boolean;
   value?: string | boolean;
@@ -15,15 +15,27 @@ export interface DocumentField {
     width: number;
     height: number;
   };
+  // Adding individual x, y, width, height properties for backward compatibility
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   page: number;
   signerId?: string;
   tooltip?: string;
   validation?: {
-    type: 'regex' | 'date' | 'email' | 'phone';
+    type: 'regex' | 'date' | 'email' | 'phone' | 'number' | 'custom';
     pattern?: string;
     message?: string;
   };
   options?: string[];
+  formula?: string;
+  conditionalLogic?: {
+    dependsOn: string;
+    condition: 'equals' | 'not_equals' | 'contains';
+    value: string;
+    action: 'show' | 'hide' | 'require';
+  };
 }
 
 export interface Document {
@@ -50,6 +62,15 @@ export interface Document {
     enabled: boolean;
     frequency: 'daily' | 'every-3-days' | 'weekly';
     maxReminders: number;
+  };
+  reminderSchedule?: {
+    enabled: boolean;
+    frequency: 'daily' | 'weekly';
+    customMessage?: string;
+  };
+  notifications?: {
+    sendCopyToSender: boolean;
+    ccEmails?: string[];
   };
   security?: {
     requireAuth: boolean;
@@ -116,6 +137,9 @@ export interface Notification {
   signerId?: string;
   createdAt: Date;
   read: boolean;
+  status?: 'sent' | 'pending' | 'failed';
+  recipientEmail?: string;
+  timestamp?: Date;
 }
 
 export interface DocumentStats {
@@ -145,7 +169,7 @@ interface DocumentContextType {
   addSigner: (documentId: string, signer: Omit<Signer, 'id' | 'order'>) => void;
   updateSigner: (signerId: string, updates: Partial<Signer>) => void;
   removeSigner: (documentId: string, signerId: string) => void;
-  sendDocument: (documentId: string) => void;
+  sendDocument: (documentId: string, message?: string) => void;
   sendReminder: (signerId: string) => void;
   bulkSend: (documentIds: string[]) => void;
   bulkDelete: (documentIds: string[]) => void;
@@ -160,6 +184,7 @@ interface DocumentContextType {
   updateTemplate: (id: string, updates: Partial<Template>) => void;
   deleteTemplate: (id: string) => void;
   addNotification: (notification: Omit<Notification, 'id' | 'createdAt'>) => void;
+  createNotification: (notification: Omit<Notification, 'id' | 'createdAt'>) => void;
   markNotificationAsRead: (id: string) => void;
   clearAllNotifications: () => void;
 }
@@ -190,6 +215,10 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             required: true,
             position: { x: 50, y: 100 },
             size: { width: 150, height: 50 },
+            x: 50,
+            y: 100,
+            width: 150,
+            height: 50,
             page: 1,
             signerId: 'signer1'
           },
@@ -200,6 +229,10 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             required: true,
             position: { x: 50, y: 150 },
             size: { width: 200, height: 30 },
+            x: 50,
+            y: 150,
+            width: 200,
+            height: 30,
             page: 1,
             signerId: 'signer1'
           }
@@ -232,6 +265,10 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             required: true,
             position: { x: 50, y: 100 },
             size: { width: 150, height: 50 },
+            x: 50,
+            y: 100,
+            width: 150,
+            height: 50,
             page: 1,
             signerId: 'partner1'
           },
@@ -242,6 +279,10 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             required: true,
             position: { x: 50, y: 200 },
             size: { width: 150, height: 50 },
+            x: 50,
+            y: 200,
+            width: 150,
+            height: 50,
             page: 1,
             signerId: 'partner2'
           }
@@ -285,6 +326,10 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             required: true,
             position: { x: 100, y: 200 },
             size: { width: 200, height: 30 },
+            x: 100,
+            y: 200,
+            width: 200,
+            height: 30,
             page: 1
           }
         ],
@@ -382,7 +427,14 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     const duplicate = createDocument(`${original.title} (Copy)`, original.content);
     updateDocument(duplicate.id, {
-      fields: original.fields.map(field => ({ ...field, id: Date.now().toString() + Math.random() })),
+      fields: original.fields.map(field => ({ 
+        ...field, 
+        id: Date.now().toString() + Math.random(),
+        x: field.position.x,
+        y: field.position.y,
+        width: field.size.width,
+        height: field.size.height
+      })),
       signers: original.signers.map(signer => ({ 
         ...signer, 
         id: Date.now().toString() + Math.random(),
@@ -402,7 +454,11 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const addField = (documentId: string, field: Omit<DocumentField, 'id'>) => {
     const newField: DocumentField = {
       id: Date.now().toString(),
-      ...field
+      ...field,
+      x: field.position.x,
+      y: field.position.y,
+      width: field.size.width,
+      height: field.size.height
     };
 
     updateDocument(documentId, {
@@ -416,7 +472,22 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return {
           ...doc,
           fields: doc.fields.map(field =>
-            field.id === fieldId ? { ...field, ...updates } : field
+            field.id === fieldId ? { 
+              ...field, 
+              ...updates,
+              x: updates.x !== undefined ? updates.x : field.x,
+              y: updates.y !== undefined ? updates.y : field.y,
+              width: updates.width !== undefined ? updates.width : field.width,
+              height: updates.height !== undefined ? updates.height : field.height,
+              position: {
+                x: updates.x !== undefined ? updates.x : field.position.x,
+                y: updates.y !== undefined ? updates.y : field.position.y
+              },
+              size: {
+                width: updates.width !== undefined ? updates.width : field.size.width,
+                height: updates.height !== undefined ? updates.height : field.size.height
+              }
+            } : field
           )
         };
       }
@@ -472,7 +543,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
 
-  const sendDocument = (documentId: string) => {
+  const sendDocument = (documentId: string, message?: string) => {
     const document = documents.find(doc => doc.id === documentId);
     if (!document) return;
 
@@ -541,6 +612,33 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
+  const getDocumentStats = (): DocumentStats => {
+    const total = documents.length;
+    const pending = documents.filter(d => d.status === 'sent' || d.status === 'in-progress').length;
+    const completed = documents.filter(d => d.status === 'completed').length;
+    const declined = documents.filter(d => d.status === 'declined').length;
+    const expired = documents.filter(d => d.status === 'expired').length;
+    
+    // Calculate average completion time
+    const completedDocs = documents.filter(d => d.status === 'completed' && d.completedAt && d.sentAt);
+    const avgTime = completedDocs.length > 0 
+      ? completedDocs.reduce((sum, doc) => {
+          const sentTime = doc.sentAt?.getTime() || 0;
+          const completedTime = doc.completedAt?.getTime() || 0;
+          return sum + (completedTime - sentTime);
+        }, 0) / completedDocs.length / (1000 * 60 * 60 * 24) // Convert to days
+      : 0;
+
+    return {
+      total,
+      pending,
+      completed,
+      declined,
+      expired,
+      averageCompletionTime: avgTime
+    };
+  };
+
   const createTemplate = (name: string, fields: DocumentField[]): Template => {
     const newTemplate: Template = {
       id: Date.now().toString(),
@@ -570,9 +668,14 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const newNotification: Notification = {
       ...notification,
       id: Date.now().toString(),
-      createdAt: new Date()
+      createdAt: new Date(),
+      timestamp: new Date()
     };
     setNotifications(prev => [newNotification, ...prev]);
+  };
+
+  const createNotification = (notification: Omit<Notification, 'id' | 'createdAt'>) => {
+    addNotification(notification);
   };
 
   const markNotificationAsRead = (id: string) => {
@@ -616,6 +719,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     updateTemplate,
     deleteTemplate,
     addNotification,
+    createNotification,
     markNotificationAsRead,
     clearAllNotifications
   };
