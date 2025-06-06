@@ -58,12 +58,19 @@ export const AdvancedFieldManager: React.FC<AdvancedFieldManagerProps> = ({
     }
 
     const fieldType = fieldTypes.find(type => type.value === selectedFieldType);
+    const x = Math.random() * 70 + 10;
+    const y = Math.random() * 70 + 10;
+    const width = selectedFieldType === 'signature' ? 25 : 15;
+    const height = selectedFieldType === 'textarea' ? 12 : 6;
+
     const newField: Omit<DocumentField, 'id'> = {
       type: selectedFieldType as DocumentField['type'],
-      x: Math.random() * 70 + 10, // Random position with some margin
-      y: Math.random() * 70 + 10,
-      width: selectedFieldType === 'signature' ? 25 : 15,
-      height: selectedFieldType === 'textarea' ? 12 : 6,
+      x,
+      y,
+      width,
+      height,
+      position: { x, y },
+      size: { width, height },
       page: 1,
       signerId: selectedSigner || undefined,
       required: true,

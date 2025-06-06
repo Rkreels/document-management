@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,12 +67,11 @@ export const WorkflowManager: React.FC<WorkflowManagerProps> = ({ document }) =>
 
   const handleAddSigner = () => {
     if (newSignerName && newSignerEmail) {
-      addSigner({
+      addSigner(document.id, {
         name: newSignerName,
         email: newSignerEmail,
         role: newSignerRole,
         status: 'pending',
-        order: document.signers.length + 1,
         canDelegate: true,
       });
       setNewSignerName('');
@@ -83,7 +83,7 @@ export const WorkflowManager: React.FC<WorkflowManagerProps> = ({ document }) =>
     updateSigner(signerId, { canDelegate });
   };
 
-  const setSignerAuth = (signerId: string, requireAuth: 'none' | 'email' | 'sms' | 'knowledge') => {
+  const setSignerAuth = (signerId: string, requireAuth: 'email' | 'sms' | 'knowledge' | 'id-verification') => {
     updateSigner(signerId, { requireAuth });
   };
 
@@ -215,7 +215,7 @@ export const WorkflowManager: React.FC<WorkflowManagerProps> = ({ document }) =>
                         <p className="text-sm text-gray-600">{signer.email}</p>
                         {signer.delegatedTo && (
                           <p className="text-xs text-blue-600">
-                            Delegated to {signer.delegatedTo.name} ({signer.delegatedTo.email})
+                            Delegated to {signer.delegatedTo}
                           </p>
                         )}
                       </div>
@@ -247,7 +247,7 @@ export const WorkflowManager: React.FC<WorkflowManagerProps> = ({ document }) =>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => sendReminder(document.id)}
+                          onClick={() => sendReminder(signer.id)}
                         >
                           Send Reminder
                         </Button>
@@ -269,9 +269,9 @@ export const WorkflowManager: React.FC<WorkflowManagerProps> = ({ document }) =>
                     <div>
                       <Label>Authentication</Label>
                       <Select 
-                        value={signer.requireAuth || 'none'} 
+                        value={signer.requireAuth || 'email'} 
                         onValueChange={(value: string) => 
-                          setSignerAuth(signer.id, value as 'none' | 'email' | 'sms' | 'knowledge')
+                          setSignerAuth(signer.id, value as 'email' | 'sms' | 'knowledge' | 'id-verification')
                         }
                         disabled={document.status !== 'draft'}
                       >
@@ -279,10 +279,10 @@ export const WorkflowManager: React.FC<WorkflowManagerProps> = ({ document }) =>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">None</SelectItem>
                           <SelectItem value="email">Email verification</SelectItem>
                           <SelectItem value="sms">SMS verification</SelectItem>
                           <SelectItem value="knowledge">Knowledge-based</SelectItem>
+                          <SelectItem value="id-verification">ID verification</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

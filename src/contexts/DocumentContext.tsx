@@ -132,6 +132,9 @@ export interface Template {
   signers?: Signer[];
 }
 
+// Export alias for backward compatibility
+export type DocumentTemplate = Template;
+
 export interface Notification {
   id: string;
   type: 'reminder' | 'completed' | 'declined' | 'expired' | 'signed';

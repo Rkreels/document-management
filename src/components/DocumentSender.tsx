@@ -56,6 +56,8 @@ export const DocumentSender: React.FC<DocumentSenderProps> = ({
         requireAuth,
         allowPrinting: true,
         allowDownload: true,
+        watermark: false,
+        ipRestriction: false,
       }
     });
 
