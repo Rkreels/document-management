@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 
 export interface DocumentField {
@@ -29,11 +30,12 @@ export interface Document {
   id: string;
   title: string;
   content: string;
-  status: 'draft' | 'sent' | 'in-progress' | 'completed' | 'declined' | 'expired';
+  status: 'draft' | 'sent' | 'in-progress' | 'completed' | 'declined' | 'expired' | 'voided';
   createdAt: Date;
   updatedAt: Date;
   completedAt?: Date;
   expiresAt?: Date;
+  sentAt?: Date;
   fields: DocumentField[];
   signers: Signer[];
   signingOrder: 'sequential' | 'parallel';
@@ -94,10 +96,43 @@ export interface Signer {
   privateMessage?: string;
 }
 
+export interface Template {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  fields: DocumentField[];
+  usageCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Notification {
+  id: string;
+  type: 'reminder' | 'completed' | 'declined' | 'expired' | 'signed';
+  title: string;
+  message: string;
+  documentId: string;
+  signerId?: string;
+  createdAt: Date;
+  read: boolean;
+}
+
+export interface DocumentStats {
+  total: number;
+  pending: number;
+  completed: number;
+  declined: number;
+  expired: number;
+  averageCompletionTime: number;
+}
+
 export const DocumentContext = createContext<any>(null);
 
 interface DocumentContextType {
   documents: Document[];
+  templates: Template[];
+  notifications: Notification[];
   currentDocument: Document | null;
   createDocument: (title: string, content?: string) => Document;
   updateDocument: (id: string, updates: Partial<Document>) => void;
@@ -120,12 +155,21 @@ interface DocumentContextType {
   getDocumentsByTag: (tag: string) => Document[];
   getDocumentsByStatus: (status: Document['status']) => Document[];
   searchDocuments: (query: string) => Document[];
+  getDocumentStats: () => DocumentStats;
+  createTemplate: (name: string, fields: DocumentField[]) => Template;
+  updateTemplate: (id: string, updates: Partial<Template>) => void;
+  deleteTemplate: (id: string) => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'createdAt'>) => void;
+  markNotificationAsRead: (id: string) => void;
+  clearAllNotifications: () => void;
 }
 
 export const useDocument = () => useContext(DocumentContext) as DocumentContextType;
 
 export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
 
   useEffect(() => {
@@ -170,7 +214,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             order: 1
           }
         ],
-	signingOrder: 'sequential'
+        signingOrder: 'sequential'
       },
       {
         id: '2',
@@ -179,6 +223,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         status: 'in-progress',
         createdAt: new Date(),
         updatedAt: new Date(),
+        sentAt: new Date(),
         fields: [
           {
             id: '201',
@@ -209,7 +254,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             role: 'Partner',
             status: 'signed',
             order: 1,
-	    signedAt: new Date()
+            signedAt: new Date()
           },
           {
             id: 'partner2',
@@ -220,11 +265,63 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             order: 2
           }
         ],
-	signingOrder: 'sequential'
+        signingOrder: 'sequential'
       },
     ];
     setDocuments(initialDocuments);
+
+    // Demo templates
+    const initialTemplates: Template[] = [
+      {
+        id: 'template1',
+        name: 'Standard NDA',
+        description: 'Non-disclosure agreement template',
+        category: 'Legal',
+        fields: [
+          {
+            id: 'field1',
+            type: 'text',
+            label: 'Company Name',
+            required: true,
+            position: { x: 100, y: 200 },
+            size: { width: 200, height: 30 },
+            page: 1
+          }
+        ],
+        usageCount: 5,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+    setTemplates(initialTemplates);
   }, []);
+
+  const getDocumentStats = (): DocumentStats => {
+    const total = documents.length;
+    const pending = documents.filter(d => d.status === 'sent' || d.status === 'in-progress').length;
+    const completed = documents.filter(d => d.status === 'completed').length;
+    const declined = documents.filter(d => d.status === 'declined').length;
+    const expired = documents.filter(d => d.status === 'expired').length;
+    
+    // Calculate average completion time
+    const completedDocs = documents.filter(d => d.status === 'completed' && d.completedAt && d.sentAt);
+    const avgTime = completedDocs.length > 0 
+      ? completedDocs.reduce((sum, doc) => {
+          const sentTime = doc.sentAt?.getTime() || 0;
+          const completedTime = doc.completedAt?.getTime() || 0;
+          return sum + (completedTime - sentTime);
+        }, 0) / completedDocs.length / (1000 * 60 * 60 * 24) // Convert to days
+      : 0;
+
+    return {
+      total,
+      pending,
+      completed,
+      declined,
+      expired,
+      averageCompletionTime: avgTime
+    };
+  };
 
   const createDocument = (title: string, content?: string): Document => {
     const newDocument: Document = {
@@ -390,6 +487,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     updateDocument(documentId, {
       status: 'sent',
+      sentAt: new Date(),
       signers: updatedSigners
     });
   };
@@ -443,8 +541,54 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
+  const createTemplate = (name: string, fields: DocumentField[]): Template => {
+    const newTemplate: Template = {
+      id: Date.now().toString(),
+      name,
+      fields,
+      usageCount: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    setTemplates(prev => [...prev, newTemplate]);
+    return newTemplate;
+  };
+
+  const updateTemplate = (id: string, updates: Partial<Template>) => {
+    setTemplates(prev => prev.map(template => 
+      template.id === id 
+        ? { ...template, ...updates, updatedAt: new Date() }
+        : template
+    ));
+  };
+
+  const deleteTemplate = (id: string) => {
+    setTemplates(prev => prev.filter(template => template.id !== id));
+  };
+
+  const addNotification = (notification: Omit<Notification, 'id' | 'createdAt'>) => {
+    const newNotification: Notification = {
+      ...notification,
+      id: Date.now().toString(),
+      createdAt: new Date()
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+  };
+
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prev => prev.map(notif => 
+      notif.id === id ? { ...notif, read: true } : notif
+    ));
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+  };
+
   const value = {
     documents,
+    templates,
+    notifications,
     currentDocument,
     createDocument,
     updateDocument,
@@ -466,7 +610,14 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     getDocumentsByFolder,
     getDocumentsByTag,
     getDocumentsByStatus,
-    searchDocuments
+    searchDocuments,
+    getDocumentStats,
+    createTemplate,
+    updateTemplate,
+    deleteTemplate,
+    addNotification,
+    markNotificationAsRead,
+    clearAllNotifications
   };
 
   return (
