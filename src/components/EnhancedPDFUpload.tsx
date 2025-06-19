@@ -3,7 +3,7 @@ import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Upload, FileText, AlertCircle, Image, File, FileX } from 'lucide-react';
+import { Upload, FileText, AlertCircle, Image, File } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface EnhancedPDFUploadProps {
@@ -17,7 +17,7 @@ export const EnhancedPDFUpload: React.FC<EnhancedPDFUploadProps> = ({
   onFileUpload, 
   className,
   acceptedTypes = ['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'],
-  maxSizeMB = 25
+  maxSizeMB = 5
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -36,11 +36,7 @@ export const EnhancedPDFUpload: React.FC<EnhancedPDFUploadProps> = ({
       'gif': 'image/gif',
       'bmp': 'image/bmp',
       'webp': 'image/webp',
-      'svg': 'image/svg+xml',
-      'xls': 'application/vnd.ms-excel',
-      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'ppt': 'application/vnd.ms-powerpoint',
-      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+      'svg': 'image/svg+xml'
     };
 
     return acceptedTypes.map(type => mimeTypeMap[type]).filter(Boolean);
@@ -50,24 +46,6 @@ export const EnhancedPDFUpload: React.FC<EnhancedPDFUploadProps> = ({
     const extensions = acceptedTypes.map(type => `.${type}`).join(',');
     const mimeTypes = getSupportedMimeTypes().join(',');
     return `${extensions},${mimeTypes}`;
-  };
-
-  const getFileIcon = (fileName: string) => {
-    const extension = fileName.toLowerCase().split('.').pop() || '';
-    
-    if (['pdf'].includes(extension)) {
-      return <FileText className="h-8 w-8 text-red-600" />;
-    } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(extension)) {
-      return <Image className="h-8 w-8 text-blue-600" />;
-    } else if (['doc', 'docx'].includes(extension)) {
-      return <FileText className="h-8 w-8 text-blue-600" />;
-    } else if (['xls', 'xlsx'].includes(extension)) {
-      return <FileText className="h-8 w-8 text-green-600" />;
-    } else if (['ppt', 'pptx'].includes(extension)) {
-      return <FileText className="h-8 w-8 text-orange-600" />;
-    } else {
-      return <File className="h-8 w-8 text-gray-600" />;
-    }
   };
 
   const validateFile = (file: File): string | null => {
@@ -110,7 +88,6 @@ export const EnhancedPDFUpload: React.FC<EnhancedPDFUploadProps> = ({
       reader.onload = (e) => {
         const result = e.target?.result as string;
         if (result) {
-          // Remove the data URL prefix to get just the base64 data
           const base64Data = result.split(',')[1];
           onFileUpload(base64Data, file.name, file.type);
           toast({
@@ -138,7 +115,6 @@ export const EnhancedPDFUpload: React.FC<EnhancedPDFUploadProps> = ({
       });
     }
 
-    // Reset the input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -165,14 +141,6 @@ export const EnhancedPDFUpload: React.FC<EnhancedPDFUploadProps> = ({
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
@@ -229,7 +197,7 @@ export const EnhancedPDFUpload: React.FC<EnhancedPDFUploadProps> = ({
             <div>
               <p className="font-medium">Supported file types:</p>
               <div className="flex flex-wrap gap-1 mt-1">
-                <span>PDFs, Word documents, Images, Text files, Excel sheets, PowerPoint presentations</span>
+                <span>PDFs, Word documents, Images, Text files</span>
               </div>
             </div>
           </div>

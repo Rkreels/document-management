@@ -32,12 +32,12 @@ export const PDFUpload: React.FC<PDFUploadProps> = ({ onPDFUpload, className }) 
       return;
     }
 
-    // Validate file size (limit to 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Validate file size (limit to 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       toast({
         title: 'File Too Large',
-        description: 'Please select a PDF file smaller than 10MB.',
+        description: 'Please select a PDF file smaller than 5MB.',
         variant: 'destructive',
       });
       return;
@@ -122,7 +122,7 @@ export const PDFUpload: React.FC<PDFUploadProps> = ({ onPDFUpload, className }) 
               </p>
               <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
                 <FileText className="h-4 w-4" />
-                <span>PDF files up to 10MB</span>
+                <span>PDF files up to 5MB</span>
               </div>
             </div>
             <Button variant="outline" className="mt-2">
@@ -143,7 +143,7 @@ export const PDFUpload: React.FC<PDFUploadProps> = ({ onPDFUpload, className }) 
           <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <div>
             <p className="font-medium">Supported formats:</p>
-            <p>PDF files only. Maximum file size: 10MB</p>
+            <p>PDF files only. Maximum file size: 5MB</p>
           </div>
         </div>
       </CardContent>

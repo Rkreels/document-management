@@ -1,12 +1,13 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ZoomIn, ZoomOut, RotateCw, Download, Maximize, Grid, Move, RefreshCw, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { DocumentField } from '@/contexts/DocumentContext';
 import { useVoice } from '@/contexts/VoiceContext';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
+import { PDFControls } from './PDFControls';
 
 // Configure PDF.js worker
 const setupPDFWorker = () => {
@@ -36,7 +37,6 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
   fields,
   onFieldClick,
   onFieldMove,
-  onFieldResize,
   signingMode = false,
   editMode = false,
   viewMode = 'preview'
@@ -65,7 +65,6 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
     
     try {
       const binaryString = atob(data);
-      // Check for PDF header
       const pdfHeader = binaryString.substring(0, 4);
       if (pdfHeader !== '%PDF') {
         console.warn('Invalid PDF header:', pdfHeader);
@@ -85,9 +84,6 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
       return;
     }
 
-    console.log('Loading PDF with data length:', pdfData.length);
-
-    // Validate PDF data before processing
     if (!validatePDFData(pdfData)) {
       setError('Invalid PDF file format. Please upload a valid PDF document.');
       setIsLoading(false);
@@ -103,28 +99,23 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
     setError(null);
 
     try {
-      // Cancel any ongoing render task
       if (renderTaskRef.current) {
         renderTaskRef.current.cancel();
         renderTaskRef.current = null;
       }
 
-      // Decode base64 PDF data
       const binaryString = atob(pdfData);
       const bytes = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
 
-      console.log('PDF data decoded successfully, size:', bytes.length);
-
-      // Load PDF document with better configuration
       const loadingTask = pdfjsLib.getDocument({
         data: bytes,
         cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
         cMapPacked: true,
         standardFontDataUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/',
-        verbosity: 0, // Reduce console noise
+        verbosity: 0,
       });
 
       const pdf = await loadingTask.promise;
@@ -139,7 +130,7 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
     } catch (err: any) {
       console.error("Error loading PDF:", err);
       const errorMessage = err.name === 'InvalidPDFException' 
-        ? 'The PDF file appears to be corrupted or invalid. Please try uploading a different PDF file.' 
+        ? 'The PDF file appears to be corrupted or invalid.' 
         : err.name === 'MissingPDFException'
         ? 'PDF file is missing or corrupted'
         : `PDF loading error: ${err.message}`;
@@ -167,11 +158,9 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
       
       if (!context) return;
 
-      // Set canvas dimensions
       canvas.height = viewport.height;
       canvas.width = viewport.width;
       
-      // Clear canvas
       context.clearRect(0, 0, canvas.width, canvas.height);
 
       const renderContext = {
@@ -179,7 +168,6 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
         viewport: viewport
       };
 
-      // Store render task and render page
       renderTaskRef.current = page.render(renderContext);
       await renderTaskRef.current.promise;
       renderTaskRef.current = null;
@@ -260,6 +248,27 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
     setDraggedField(null);
   };
 
+  const handleZoom = (direction: 'in' | 'out') => {
+    const newZoom = direction === 'in' 
+      ? Math.min(3, zoom + 0.2) 
+      : Math.max(0.3, zoom - 0.2);
+    setZoom(newZoom);
+    speak(`Zoom ${direction === 'in' ? 'increased' : 'decreased'} to ${Math.round(newZoom * 100)}%`, 'low');
+  };
+
+  const handlePageChange = (direction: 'prev' | 'next') => {
+    const newPage = direction === 'next' 
+      ? Math.min(totalPages, currentPage + 1)
+      : Math.max(1, currentPage - 1);
+    setCurrentPage(newPage);
+    speak(`Page ${newPage} of ${totalPages}`, 'low');
+  };
+
+  const handleRotate = () => {
+    setRotation((rotation + 90) % 360);
+    speak('Document rotated', 'low');
+  };
+
   const renderFields = () => {
     if (!canvasRef.current) return null;
 
@@ -326,22 +335,6 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
       });
   };
 
-  const handleZoom = (direction: 'in' | 'out') => {
-    const newZoom = direction === 'in' 
-      ? Math.min(3, zoom + 0.2) 
-      : Math.max(0.3, zoom - 0.2);
-    setZoom(newZoom);
-    speak(`Zoom ${direction === 'in' ? 'increased' : 'decreased'} to ${Math.round(newZoom * 100)}%`, 'low');
-  };
-
-  const handlePageChange = (direction: 'prev' | 'next') => {
-    const newPage = direction === 'next' 
-      ? Math.min(totalPages, currentPage + 1)
-      : Math.max(1, currentPage - 1);
-    setCurrentPage(newPage);
-    speak(`Page ${newPage} of ${totalPages}`, 'low');
-  };
-
   if (error) {
     return (
       <Card className="p-8 text-center">
@@ -359,12 +352,13 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
               <li>The PDF was generated incorrectly</li>
             </ul>
           </div>
-          <div className="flex gap-2 justify-center">
-            <Button onClick={loadPDF} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
-          </div>
+          <button 
+            onClick={loadPDF} 
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </button>
         </CardContent>
       </Card>
     );
@@ -372,78 +366,15 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
 
   return (
     <div className="w-full">
-      {/* Enhanced Controls */}
-      <div className="flex items-center justify-between p-4 border-b bg-gray-50">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleZoom('out')} disabled={zoom <= 0.3}>
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          <span className="text-sm font-medium min-w-[60px] text-center">
-            {Math.round(zoom * 100)}%
-          </span>
-          <Button variant="outline" size="sm" onClick={() => handleZoom('in')} disabled={zoom >= 3}>
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange('prev')}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange('next')}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </Button>
-        </div>
+      <PDFControls
+        zoom={zoom}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onZoom={handleZoom}
+        onPageChange={handlePageChange}
+        onRotate={handleRotate}
+      />
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setRotation((rotation + 90) % 360)}
-          >
-            <RotateCw className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm">
-            <Maximize className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Status Bar */}
-      {(editMode || signingMode) && (
-        <div className="px-4 py-2 bg-blue-50 border-b text-sm">
-          {editMode && (
-            <span className="text-blue-700">
-              <Move className="inline h-4 w-4 mr-1" />
-              Edit Mode: Drag fields to reposition them
-            </span>
-          )}
-          {signingMode && (
-            <span className="text-green-700">
-              <Grid className="inline h-4 w-4 mr-1" />
-              Signing Mode: Click on fields to fill them out
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* PDF Canvas Container */}
       <div 
         ref={containerRef}
         className="relative overflow-auto bg-gray-100 flex justify-center items-center min-h-96"
