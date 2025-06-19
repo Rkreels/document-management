@@ -34,9 +34,9 @@ const Templates = () => {
     
     const timer = setTimeout(() => {
       if (templates.length === 0) {
-        speak("Welcome to the Templates library! I'm setting up some default templates for you. Templates help you create documents faster by reusing common layouts and fields.", 'normal');
+        speak("Welcome to the Templates library! I'm setting up comprehensive templates for official documents. You'll have 20 professional templates for various business and legal needs.", 'normal');
       } else {
-        speak(`You have ${templates.length} templates available. You can search through them, create new documents from templates, or manage existing templates. I recommend starting with one of our pre-made templates for common document types.`, 'normal');
+        speak(`You have ${templates.length} templates available. These include professional templates for contracts, agreements, forms, and official documents. You can search through them or create new documents from any template.`, 'normal');
       }
     }, 1000);
 
@@ -48,16 +48,15 @@ const Templates = () => {
 
   const filteredTemplates = templates.filter(template =>
     template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    template.category?.toLowerCase().includes(searchTerm.toLowerCase())
+    (template.description && template.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (template.category && template.category.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleCreateDocument = (template: DocumentTemplate) => {
     const title = `${template.name} - ${new Date().toLocaleDateString()}`;
     const newDocument = createDocumentFromTemplate(template.id, title);
-    speak(`Creating a new document from the ${template.name} template. This template includes ${template.fields.length} pre-configured fields and ${template.signers.length} signers. Taking you to the editor to customize it.`, 'high');
+    speak(`Creating a new document from the ${template.name} template. This template includes ${template.fields.length} pre-configured fields and ${template.signers?.length || 0} signers. Taking you to the editor to customize it.`, 'high');
     
-    // Trigger smart guidance
     setTimeout(() => {
       (window as any).voiceGuide?.provideActionGuidance('template-created', { templateName: template.name });
     }, 1500);
@@ -104,7 +103,7 @@ const Templates = () => {
             </Button>
             <div>
               <h1 className="text-3xl font-bold">Document Templates</h1>
-              <p className="text-gray-600">Create and manage reusable document templates</p>
+              <p className="text-gray-600">20+ Professional templates for official documents</p>
             </div>
           </div>
           <Button onClick={handleNewTemplate} className="flex items-center gap-2">
@@ -137,7 +136,7 @@ const Templates = () => {
               </h3>
               <p className="text-gray-600 mb-6">
                 {templates.length === 0 
-                  ? "Setting up default templates for common document types."
+                  ? "Setting up 20+ professional templates for official documents."
                   : "Try adjusting your search terms to find the template you need."
                 }
               </p>
@@ -171,7 +170,7 @@ const Templates = () => {
                     </div>
                     <div className="flex justify-between">
                       <span>Signers:</span>
-                      <span>{template.signers.length}</span>
+                      <span>{template.signers?.length || 0}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Created:</span>
