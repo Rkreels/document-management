@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -151,7 +152,7 @@ export const SignerManager: React.FC<SignerManagerProps> = ({
                           variant="outline"
                           size="icon"
                           onClick={() => onMoveSignerDown(signer.id)}
-                          disabled={index ===! document.signers.length - 1}
+                          disabled={index === document.signers.length - 1}
                         >
                           <ArrowDown className="h-4 w-4" />
                         </Button>
