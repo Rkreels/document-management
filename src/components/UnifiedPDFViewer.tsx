@@ -1,9 +1,8 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ZoomIn, ZoomOut, RotateCw, Download, Maximize, Grid, Move, RefreshCw } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCw, Download, Maximize, Grid, Move, RefreshCw, AlertTriangle } from 'lucide-react';
 import { DocumentField } from '@/contexts/DocumentContext';
 import { useVoice } from '@/contexts/VoiceContext';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -58,10 +57,45 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
   const [draggedField, setDraggedField] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
+  const validatePDFData = (data: string): boolean => {
+    if (!data || data.length < 100) {
+      console.warn('PDF data too short:', data.length);
+      return false;
+    }
+    
+    try {
+      const binaryString = atob(data);
+      // Check for PDF header
+      const pdfHeader = binaryString.substring(0, 4);
+      if (pdfHeader !== '%PDF') {
+        console.warn('Invalid PDF header:', pdfHeader);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn('PDF data validation failed:', error);
+      return false;
+    }
+  };
+
   const loadPDF = useCallback(async () => {
     if (!pdfData) {
       setError('No PDF data provided');
       setIsLoading(false);
+      return;
+    }
+
+    console.log('Loading PDF with data length:', pdfData.length);
+
+    // Validate PDF data before processing
+    if (!validatePDFData(pdfData)) {
+      setError('Invalid PDF file format. Please upload a valid PDF document.');
+      setIsLoading(false);
+      toast({
+        title: 'Invalid PDF File',
+        description: 'The uploaded file is not a valid PDF document. Please try uploading a different file.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -82,12 +116,15 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
         bytes[i] = binaryString.charCodeAt(i);
       }
 
+      console.log('PDF data decoded successfully, size:', bytes.length);
+
       // Load PDF document with better configuration
       const loadingTask = pdfjsLib.getDocument({
         data: bytes,
         cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
         cMapPacked: true,
         standardFontDataUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/',
+        verbosity: 0, // Reduce console noise
       });
 
       const pdf = await loadingTask.promise;
@@ -102,7 +139,7 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
     } catch (err: any) {
       console.error("Error loading PDF:", err);
       const errorMessage = err.name === 'InvalidPDFException' 
-        ? 'Invalid PDF file format' 
+        ? 'The PDF file appears to be corrupted or invalid. Please try uploading a different PDF file.' 
         : err.name === 'MissingPDFException'
         ? 'PDF file is missing or corrupted'
         : `PDF loading error: ${err.message}`;
@@ -309,7 +346,19 @@ export const UnifiedPDFViewer: React.FC<UnifiedPDFViewerProps> = ({
     return (
       <Card className="p-8 text-center">
         <CardContent>
+          <div className="flex items-center justify-center mb-4">
+            <AlertTriangle className="h-8 w-8 text-red-500 mr-2" />
+            <h3 className="text-lg font-semibold text-red-700">PDF Loading Error</h3>
+          </div>
           <p className="text-red-600 mb-4">{error}</p>
+          <div className="space-y-2 text-sm text-gray-600 mb-4">
+            <p>This error typically occurs when:</p>
+            <ul className="list-disc list-inside text-left max-w-md mx-auto">
+              <li>The PDF file is corrupted or incomplete</li>
+              <li>The file is not actually a PDF document</li>
+              <li>The PDF was generated incorrectly</li>
+            </ul>
+          </div>
           <div className="flex gap-2 justify-center">
             <Button onClick={loadPDF} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
