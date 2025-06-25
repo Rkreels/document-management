@@ -17,24 +17,31 @@ const Templates = () => {
   const { speak, stop } = useVoice();
   const { templates, deleteTemplate, createDocumentFromTemplate, addTemplate } = useDocument();
   const [searchTerm, setSearchTerm] = useState('');
-  const [hasInitializedTemplates, setHasInitializedTemplates] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Initialize default templates if none exist
   useEffect(() => {
-    if (!hasInitializedTemplates && templates.length === 0) {
-      defaultTemplates.forEach(template => {
+    console.log('Templates effect running. Current templates:', templates.length);
+    
+    if (!isInitialized && templates.length === 0) {
+      console.log('Initializing default templates...');
+      defaultTemplates.forEach((template, index) => {
+        console.log(`Adding template ${index + 1}:`, template.name);
         addTemplate(template);
       });
-      setHasInitializedTemplates(true);
+      setIsInitialized(true);
+      console.log('Default templates initialization completed');
+    } else if (templates.length > 0 && !isInitialized) {
+      setIsInitialized(true);
     }
-  }, [templates.length, addTemplate, hasInitializedTemplates]);
+  }, [templates.length, addTemplate, isInitialized]);
 
   useEffect(() => {
     stop();
     
     const timer = setTimeout(() => {
       if (templates.length === 0) {
-        speak("Welcome to the Templates library! I'm setting up comprehensive templates for official documents. You'll have 20 professional templates for various business and legal needs.", 'normal');
+        speak("Welcome to the Templates library! I'm setting up comprehensive templates for official documents. You'll have 20+ professional templates for various business and legal needs.", 'normal');
       } else {
         speak(`You have ${templates.length} templates available. These include professional templates for contracts, agreements, forms, and official documents. You can search through them or create new documents from any template.`, 'normal');
       }
@@ -103,7 +110,7 @@ const Templates = () => {
             </Button>
             <div>
               <h1 className="text-3xl font-bold">Document Templates</h1>
-              <p className="text-gray-600">20+ Professional templates for official documents</p>
+              <p className="text-gray-600">{templates.length}+ Professional templates for official documents</p>
             </div>
           </div>
           <Button onClick={handleNewTemplate} className="flex items-center gap-2">
@@ -127,20 +134,20 @@ const Templates = () => {
         </div>
 
         {/* Templates Grid */}
-        {filteredTemplates.length === 0 ? (
+        {!isInitialized || filteredTemplates.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
               <FileText className="h-16 w-16 mx-auto text-gray-400 mb-4" />
               <h3 className="text-xl font-semibold mb-2">
-                {templates.length === 0 ? "Loading templates..." : "No templates found"}
+                {!isInitialized ? "Loading templates..." : "No templates found"}
               </h3>
               <p className="text-gray-600 mb-6">
-                {templates.length === 0 
+                {!isInitialized 
                   ? "Setting up 20+ professional templates for official documents."
                   : "Try adjusting your search terms to find the template you need."
                 }
               </p>
-              {templates.length === 0 && (
+              {isInitialized && templates.length === 0 && (
                 <Button onClick={handleNewTemplate}>
                   Create Your First Template
                 </Button>

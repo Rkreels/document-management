@@ -1,13 +1,14 @@
 
 // Configuration for hosting at different paths
 export const getBasePath = () => {
-  // For production, the base path is handled by Vite config
-  return '';
+  return '/document-management';
 };
 
 export const getFullUrl = (path: string) => {
   const basePath = getBasePath();
-  return `${basePath}${path.startsWith('/') ? '' : '/'}${path}`;
+  // Remove leading slash from path if it exists to avoid double slashes
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  return cleanPath ? `${basePath}/${cleanPath}` : basePath;
 };
 
 // DocuSign-like configuration

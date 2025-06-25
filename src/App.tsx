@@ -23,7 +23,7 @@ function App() {
     <ErrorBoundary>
       <VoiceProvider>
         <DocumentProvider>
-          <Router>
+          <Router basename="/document-management">
             <div className="App">
               <Routes>
                 <Route path="/" element={<Index />} />
