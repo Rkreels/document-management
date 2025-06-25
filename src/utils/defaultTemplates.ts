@@ -96,8 +96,7 @@ export const defaultTemplates: DocumentTemplate[] = [
       { id: 'employee', name: 'Employee', email: '', role: 'employee', order: 1, status: 'pending' },
       { id: 'hr-manager', name: 'HR Manager', email: '', role: 'hr', order: 2, status: 'pending' }
     ],
-    content: '',
-    fileName: 'employment-contract-template.pdf'
+    content: ''
   },
   {
     id: 'template-nda',
@@ -181,8 +180,7 @@ export const defaultTemplates: DocumentTemplate[] = [
       { id: 'disclosing', name: 'Disclosing Party', email: '', role: 'party1', order: 1, status: 'pending' },
       { id: 'receiving', name: 'Receiving Party', email: '', role: 'party2', order: 2, status: 'pending' }
     ],
-    content: '',
-    fileName: 'nda-template.pdf'
+    content: ''
   },
   {
     id: 'template-lease-agreement',
@@ -292,8 +290,7 @@ export const defaultTemplates: DocumentTemplate[] = [
       { id: 'tenant', name: 'Tenant', email: '', role: 'tenant', order: 1, status: 'pending' },
       { id: 'landlord', name: 'Landlord', email: '', role: 'landlord', order: 2, status: 'pending' }
     ],
-    content: '',
-    fileName: 'lease-agreement-template.pdf'
+    content: ''
   },
   {
     id: 'template-purchase-agreement',
@@ -403,8 +400,7 @@ export const defaultTemplates: DocumentTemplate[] = [
       { id: 'buyer', name: 'Buyer', email: '', role: 'buyer', order: 1, status: 'pending' },
       { id: 'seller', name: 'Seller', email: '', role: 'seller', order: 2, status: 'pending' }
     ],
-    content: '',
-    fileName: 'purchase-agreement-template.pdf'
+    content: ''
   },
   {
     id: 'template-service-agreement',
@@ -514,7 +510,6 @@ export const defaultTemplates: DocumentTemplate[] = [
       { id: 'client', name: 'Client', email: '', role: 'client', order: 1, status: 'pending' },
       { id: 'provider', name: 'Service Provider', email: '', role: 'provider', order: 2, status: 'pending' }
     ],
-    content: '',
-    fileName: 'service-agreement-template.pdf'
+    content: ''
   }
 ];
