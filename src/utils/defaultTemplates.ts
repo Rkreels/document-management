@@ -10,19 +10,93 @@ export const defaultTemplates: DocumentTemplate[] = [
     tags: ['employment', 'contract', 'legal'],
     createdAt: new Date(),
     updatedAt: new Date(),
+    usageCount: 0,
     fields: [
-      { id: 'emp-name', type: 'text', label: 'Employee Name', required: true, x: 100, y: 200, width: 200, height: 30 },
-      { id: 'emp-position', type: 'text', label: 'Position', required: true, x: 100, y: 250, width: 200, height: 30 },
-      { id: 'start-date', type: 'date', label: 'Start Date', required: true, x: 100, y: 300, width: 150, height: 30 },
-      { id: 'salary', type: 'text', label: 'Annual Salary', required: true, x: 100, y: 350, width: 150, height: 30 },
-      { id: 'emp-signature', type: 'signature', label: 'Employee Signature', required: true, x: 100, y: 450, width: 200, height: 60 },
-      { id: 'emp-date', type: 'date', label: 'Date Signed', required: true, x: 320, y: 480, width: 100, height: 30 }
+      { 
+        id: 'emp-name', 
+        type: 'text', 
+        label: 'Employee Name', 
+        required: true, 
+        x: 100, 
+        y: 200, 
+        width: 200, 
+        height: 30,
+        position: { x: 100, y: 200 },
+        size: { width: 200, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'emp-position', 
+        type: 'text', 
+        label: 'Position', 
+        required: true, 
+        x: 100, 
+        y: 250, 
+        width: 200, 
+        height: 30,
+        position: { x: 100, y: 250 },
+        size: { width: 200, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'start-date', 
+        type: 'date', 
+        label: 'Start Date', 
+        required: true, 
+        x: 100, 
+        y: 300, 
+        width: 150, 
+        height: 30,
+        position: { x: 100, y: 300 },
+        size: { width: 150, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'salary', 
+        type: 'text', 
+        label: 'Annual Salary', 
+        required: true, 
+        x: 100, 
+        y: 350, 
+        width: 150, 
+        height: 30,
+        position: { x: 100, y: 350 },
+        size: { width: 150, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'emp-signature', 
+        type: 'signature', 
+        label: 'Employee Signature', 
+        required: true, 
+        x: 100, 
+        y: 450, 
+        width: 200, 
+        height: 60,
+        position: { x: 100, y: 450 },
+        size: { width: 200, height: 60 },
+        page: 1,
+        signerId: 'employee'
+      },
+      { 
+        id: 'emp-date', 
+        type: 'date', 
+        label: 'Date Signed', 
+        required: true, 
+        x: 320, 
+        y: 480, 
+        width: 100, 
+        height: 30,
+        position: { x: 320, y: 480 },
+        size: { width: 100, height: 30 },
+        page: 1
+      }
     ],
     signers: [
-      { id: 'employee', name: 'Employee', email: '', role: 'employee', order: 1 },
-      { id: 'hr-manager', name: 'HR Manager', email: '', role: 'hr', order: 2 }
+      { id: 'employee', name: 'Employee', email: '', role: 'employee', order: 1, status: 'pending' },
+      { id: 'hr-manager', name: 'HR Manager', email: '', role: 'hr', order: 2, status: 'pending' }
     ],
-    pdfData: '',
+    content: '',
     fileName: 'employment-contract-template.pdf'
   },
   {
@@ -33,18 +107,81 @@ export const defaultTemplates: DocumentTemplate[] = [
     tags: ['nda', 'confidentiality', 'legal'],
     createdAt: new Date(),
     updatedAt: new Date(),
+    usageCount: 0,
     fields: [
-      { id: 'party1-name', type: 'text', label: 'Disclosing Party', required: true, x: 100, y: 180, width: 200, height: 30 },
-      { id: 'party2-name', type: 'text', label: 'Receiving Party', required: true, x: 100, y: 220, width: 200, height: 30 },
-      { id: 'effective-date', type: 'date', label: 'Effective Date', required: true, x: 100, y: 260, width: 150, height: 30 },
-      { id: 'party1-signature', type: 'signature', label: 'Disclosing Party Signature', required: true, x: 100, y: 400, width: 200, height: 60 },
-      { id: 'party2-signature', type: 'signature', label: 'Receiving Party Signature', required: true, x: 350, y: 400, width: 200, height: 60 }
+      { 
+        id: 'party1-name', 
+        type: 'text', 
+        label: 'Disclosing Party', 
+        required: true, 
+        x: 100, 
+        y: 180, 
+        width: 200, 
+        height: 30,
+        position: { x: 100, y: 180 },
+        size: { width: 200, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'party2-name', 
+        type: 'text', 
+        label: 'Receiving Party', 
+        required: true, 
+        x: 100, 
+        y: 220, 
+        width: 200, 
+        height: 30,
+        position: { x: 100, y: 220 },
+        size: { width: 200, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'effective-date', 
+        type: 'date', 
+        label: 'Effective Date', 
+        required: true, 
+        x: 100, 
+        y: 260, 
+        width: 150, 
+        height: 30,
+        position: { x: 100, y: 260 },
+        size: { width: 150, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'party1-signature', 
+        type: 'signature', 
+        label: 'Disclosing Party Signature', 
+        required: true, 
+        x: 100, 
+        y: 400, 
+        width: 200, 
+        height: 60,
+        position: { x: 100, y: 400 },
+        size: { width: 200, height: 60 },
+        page: 1,
+        signerId: 'disclosing'
+      },
+      { 
+        id: 'party2-signature', 
+        type: 'signature', 
+        label: 'Receiving Party Signature', 
+        required: true, 
+        x: 350, 
+        y: 400, 
+        width: 200, 
+        height: 60,
+        position: { x: 350, y: 400 },
+        size: { width: 200, height: 60 },
+        page: 1,
+        signerId: 'receiving'
+      }
     ],
     signers: [
-      { id: 'disclosing', name: 'Disclosing Party', email: '', role: 'party1', order: 1 },
-      { id: 'receiving', name: 'Receiving Party', email: '', role: 'party2', order: 2 }
+      { id: 'disclosing', name: 'Disclosing Party', email: '', role: 'party1', order: 1, status: 'pending' },
+      { id: 'receiving', name: 'Receiving Party', email: '', role: 'party2', order: 2, status: 'pending' }
     ],
-    pdfData: '',
+    content: '',
     fileName: 'nda-template.pdf'
   },
   {
@@ -55,20 +192,107 @@ export const defaultTemplates: DocumentTemplate[] = [
     tags: ['lease', 'rental', 'property'],
     createdAt: new Date(),
     updatedAt: new Date(),
+    usageCount: 0,
     fields: [
-      { id: 'tenant-name', type: 'text', label: 'Tenant Name', required: true, x: 100, y: 150, width: 200, height: 30 },
-      { id: 'landlord-name', type: 'text', label: 'Landlord Name', required: true, x: 100, y: 190, width: 200, height: 30 },
-      { id: 'property-address', type: 'text', label: 'Property Address', required: true, x: 100, y: 230, width: 300, height: 30 },
-      { id: 'monthly-rent', type: 'text', label: 'Monthly Rent', required: true, x: 100, y: 270, width: 150, height: 30 },
-      { id: 'lease-term', type: 'text', label: 'Lease Term', required: true, x: 100, y: 310, width: 150, height: 30 },
-      { id: 'tenant-signature', type: 'signature', label: 'Tenant Signature', required: true, x: 100, y: 450, width: 200, height: 60 },
-      { id: 'landlord-signature', type: 'signature', label: 'Landlord Signature', required: true, x: 350, y: 450, width: 200, height: 60 }
+      { 
+        id: 'tenant-name', 
+        type: 'text', 
+        label: 'Tenant Name', 
+        required: true, 
+        x: 100, 
+        y: 150, 
+        width: 200, 
+        height: 30,
+        position: { x: 100, y: 150 },
+        size: { width: 200, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'landlord-name', 
+        type: 'text', 
+        label: 'Landlord Name', 
+        required: true, 
+        x: 100, 
+        y: 190, 
+        width: 200, 
+        height: 30,
+        position: { x: 100, y: 190 },
+        size: { width: 200, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'property-address', 
+        type: 'text', 
+        label: 'Property Address', 
+        required: true, 
+        x: 100, 
+        y: 230, 
+        width: 300, 
+        height: 30,
+        position: { x: 100, y: 230 },
+        size: { width: 300, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'monthly-rent', 
+        type: 'text', 
+        label: 'Monthly Rent', 
+        required: true, 
+        x: 100, 
+        y: 270, 
+        width: 150, 
+        height: 30,
+        position: { x: 100, y: 270 },
+        size: { width: 150, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'lease-term', 
+        type: 'text', 
+        label: 'Lease Term', 
+        required: true, 
+        x: 100, 
+        y: 310, 
+        width: 150, 
+        height: 30,
+        position: { x: 100, y: 310 },
+        size: { width: 150, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'tenant-signature', 
+        type: 'signature', 
+        label: 'Tenant Signature', 
+        required: true, 
+        x: 100, 
+        y: 450, 
+        width: 200, 
+        height: 60,
+        position: { x: 100, y: 450 },
+        size: { width: 200, height: 60 },
+        page: 1,
+        signerId: 'tenant'
+      },
+      { 
+        id: 'landlord-signature', 
+        type: 'signature', 
+        label: 'Landlord Signature', 
+        required: true, 
+        x: 350, 
+        y: 450, 
+        width: 200, 
+        height: 60,
+        position: { x: 350, y: 450 },
+        size: { width: 200, height: 60 },
+        page: 1,
+        signerId: 'landlord'
+      }
     ],
     signers: [
-      { id: 'tenant', name: 'Tenant', email: '', role: 'tenant', order: 1 },
-      { id: 'landlord', name: 'Landlord', email: '', role: 'landlord', order: 2 }
+      { id: 'tenant', name: 'Tenant', email: '', role: 'tenant', order: 1, status: 'pending' },
+      { id: 'landlord', name: 'Landlord', email: '', role: 'landlord', order: 2, status: 'pending' }
     ],
-    pdfData: '',
+    content: '',
     fileName: 'lease-agreement-template.pdf'
   },
   {
@@ -79,20 +303,107 @@ export const defaultTemplates: DocumentTemplate[] = [
     tags: ['purchase', 'agreement', 'commercial'],
     createdAt: new Date(),
     updatedAt: new Date(),
+    usageCount: 0,
     fields: [
-      { id: 'buyer-name', type: 'text', label: 'Buyer Name', required: true, x: 100, y: 160, width: 200, height: 30 },
-      { id: 'seller-name', type: 'text', label: 'Seller Name', required: true, x: 100, y: 200, width: 200, height: 30 },
-      { id: 'item-description', type: 'text', label: 'Item Description', required: true, x: 100, y: 240, width: 300, height: 30 },
-      { id: 'purchase-price', type: 'text', label: 'Purchase Price', required: true, x: 100, y: 280, width: 150, height: 30 },
-      { id: 'delivery-date', type: 'date', label: 'Delivery Date', required: true, x: 100, y: 320, width: 150, height: 30 },
-      { id: 'buyer-signature', type: 'signature', label: 'Buyer Signature', required: true, x: 100, y: 420, width: 200, height: 60 },
-      { id: 'seller-signature', type: 'signature', label: 'Seller Signature', required: true, x: 350, y: 420, width: 200, height: 60 }
+      { 
+        id: 'buyer-name', 
+        type: 'text', 
+        label: 'Buyer Name', 
+        required: true, 
+        x: 100, 
+        y: 160, 
+        width: 200, 
+        height: 30,
+        position: { x: 100, y: 160 },
+        size: { width: 200, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'seller-name', 
+        type: 'text', 
+        label: 'Seller Name', 
+        required: true, 
+        x: 100, 
+        y: 200, 
+        width: 200, 
+        height: 30,
+        position: { x: 100, y: 200 },
+        size: { width: 200, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'item-description', 
+        type: 'text', 
+        label: 'Item Description', 
+        required: true, 
+        x: 100, 
+        y: 240, 
+        width: 300, 
+        height: 30,
+        position: { x: 100, y: 240 },
+        size: { width: 300, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'purchase-price', 
+        type: 'text', 
+        label: 'Purchase Price', 
+        required: true, 
+        x: 100, 
+        y: 280, 
+        width: 150, 
+        height: 30,
+        position: { x: 100, y: 280 },
+        size: { width: 150, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'delivery-date', 
+        type: 'date', 
+        label: 'Delivery Date', 
+        required: true, 
+        x: 100, 
+        y: 320, 
+        width: 150, 
+        height: 30,
+        position: { x: 100, y: 320 },
+        size: { width: 150, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'buyer-signature', 
+        type: 'signature', 
+        label: 'Buyer Signature', 
+        required: true, 
+        x: 100, 
+        y: 420, 
+        width: 200, 
+        height: 60,
+        position: { x: 100, y: 420 },
+        size: { width: 200, height: 60 },
+        page: 1,
+        signerId: 'buyer'
+      },
+      { 
+        id: 'seller-signature', 
+        type: 'signature', 
+        label: 'Seller Signature', 
+        required: true, 
+        x: 350, 
+        y: 420, 
+        width: 200, 
+        height: 60,
+        position: { x: 350, y: 420 },
+        size: { width: 200, height: 60 },
+        page: 1,
+        signerId: 'seller'
+      }
     ],
     signers: [
-      { id: 'buyer', name: 'Buyer', email: '', role: 'buyer', order: 1 },
-      { id: 'seller', name: 'Seller', email: '', role: 'seller', order: 2 }
+      { id: 'buyer', name: 'Buyer', email: '', role: 'buyer', order: 1, status: 'pending' },
+      { id: 'seller', name: 'Seller', email: '', role: 'seller', order: 2, status: 'pending' }
     ],
-    pdfData: '',
+    content: '',
     fileName: 'purchase-agreement-template.pdf'
   },
   {
@@ -103,20 +414,107 @@ export const defaultTemplates: DocumentTemplate[] = [
     tags: ['service', 'agreement', 'professional'],
     createdAt: new Date(),
     updatedAt: new Date(),
+    usageCount: 0,
     fields: [
-      { id: 'client-name', type: 'text', label: 'Client Name', required: true, x: 100, y: 170, width: 200, height: 30 },
-      { id: 'provider-name', type: 'text', label: 'Service Provider', required: true, x: 100, y: 210, width: 200, height: 30 },
-      { id: 'service-description', type: 'text', label: 'Service Description', required: true, x: 100, y: 250, width: 300, height: 30 },
-      { id: 'service-fee', type: 'text', label: 'Service Fee', required: true, x: 100, y: 290, width: 150, height: 30 },
-      { id: 'start-date', type: 'date', label: 'Start Date', required: true, x: 100, y: 330, width: 150, height: 30 },
-      { id: 'client-signature', type: 'signature', label: 'Client Signature', required: true, x: 100, y: 430, width: 200, height: 60 },
-      { id: 'provider-signature', type: 'signature', label: 'Provider Signature', required: true, x: 350, y: 430, width: 200, height: 60 }
+      { 
+        id: 'client-name', 
+        type: 'text', 
+        label: 'Client Name', 
+        required: true, 
+        x: 100, 
+        y: 170, 
+        width: 200, 
+        height: 30,
+        position: { x: 100, y: 170 },
+        size: { width: 200, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'provider-name', 
+        type: 'text', 
+        label: 'Service Provider', 
+        required: true, 
+        x: 100, 
+        y: 210, 
+        width: 200, 
+        height: 30,
+        position: { x: 100, y: 210 },
+        size: { width: 200, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'service-description', 
+        type: 'text', 
+        label: 'Service Description', 
+        required: true, 
+        x: 100, 
+        y: 250, 
+        width: 300, 
+        height: 30,
+        position: { x: 100, y: 250 },
+        size: { width: 300, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'service-fee', 
+        type: 'text', 
+        label: 'Service Fee', 
+        required: true, 
+        x: 100, 
+        y: 290, 
+        width: 150, 
+        height: 30,
+        position: { x: 100, y: 290 },
+        size: { width: 150, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'start-date', 
+        type: 'date', 
+        label: 'Start Date', 
+        required: true, 
+        x: 100, 
+        y: 330, 
+        width: 150, 
+        height: 30,
+        position: { x: 100, y: 330 },
+        size: { width: 150, height: 30 },
+        page: 1
+      },
+      { 
+        id: 'client-signature', 
+        type: 'signature', 
+        label: 'Client Signature', 
+        required: true, 
+        x: 100, 
+        y: 430, 
+        width: 200, 
+        height: 60,
+        position: { x: 100, y: 430 },
+        size: { width: 200, height: 60 },
+        page: 1,
+        signerId: 'client'
+      },
+      { 
+        id: 'provider-signature', 
+        type: 'signature', 
+        label: 'Provider Signature', 
+        required: true, 
+        x: 350, 
+        y: 430, 
+        width: 200, 
+        height: 60,
+        position: { x: 350, y: 430 },
+        size: { width: 200, height: 60 },
+        page: 1,
+        signerId: 'provider'
+      }
     ],
     signers: [
-      { id: 'client', name: 'Client', email: '', role: 'client', order: 1 },
-      { id: 'provider', name: 'Service Provider', email: '', role: 'provider', order: 2 }
+      { id: 'client', name: 'Client', email: '', role: 'client', order: 1, status: 'pending' },
+      { id: 'provider', name: 'Service Provider', email: '', role: 'provider', order: 2, status: 'pending' }
     ],
-    pdfData: '',
+    content: '',
     fileName: 'service-agreement-template.pdf'
   }
 ];
