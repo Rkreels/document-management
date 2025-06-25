@@ -1,0 +1,21 @@
+
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "routes": [
+    {
+      "src": "/document-management/(.*)",
+      "dest": "/document-management/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/document-management/(.*)",
+      "destination": "/document-management/index.html"
+    }
+  ]
+}

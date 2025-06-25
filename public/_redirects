@@ -1,4 +1,4 @@
 
 # Netlify redirects for SPA
-/simulation/document-management/* /simulation/document-management/index.html 200
+/document-management/* /document-management/index.html 200
 /* /index.html 200

@@ -20,7 +20,7 @@ import { DocumentRouter } from '@/components/DocumentRouter';
 
 function App() {
   // Support for hosting at subdirectory
-  const basename = import.meta.env.VITE_BASE_URL || '';
+  const basename = import.meta.env.VITE_BASE_URL || '/document-management';
 
   return (
     <ErrorBoundary>

@@ -2,7 +2,7 @@
 // Configuration for hosting at different paths
 export const getBasePath = () => {
   // Support for different hosting scenarios
-  const basePath = import.meta.env.VITE_BASE_URL || '';
+  const basePath = import.meta.env.VITE_BASE_URL || '/document-management';
   return basePath;
 };
 
@@ -34,7 +34,6 @@ export const APP_CONFIG = {
   hosting: {
     basePath: getBasePath(),
     supportedPaths: [
-      '/simulation/document-management',
       '/document-management',
       '/'
     ]
