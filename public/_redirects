@@ -1,4 +1,4 @@
 
-# Netlify redirects for SPA
+# Netlify redirects for SPA hosted at /document-management
 /document-management/* /document-management/index.html 200
 /* /index.html 200

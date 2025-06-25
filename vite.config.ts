@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  base: process.env.VITE_BASE_URL || '/document-management/',
+  base: '/document-management/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

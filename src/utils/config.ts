@@ -1,9 +1,8 @@
 
 // Configuration for hosting at different paths
 export const getBasePath = () => {
-  // Support for different hosting scenarios
-  const basePath = import.meta.env.VITE_BASE_URL || '/document-management';
-  return basePath;
+  // For production, the base path is handled by Vite config
+  return '';
 };
 
 export const getFullUrl = (path: string) => {
@@ -32,7 +31,7 @@ export const APP_CONFIG = {
     maxReminders: 10
   },
   hosting: {
-    basePath: getBasePath(),
+    basePath: '/document-management',
     supportedPaths: [
       '/document-management',
       '/'

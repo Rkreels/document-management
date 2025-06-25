@@ -19,14 +19,11 @@ import NotFound from '@/pages/NotFound';
 import { DocumentRouter } from '@/components/DocumentRouter';
 
 function App() {
-  // Support for hosting at subdirectory
-  const basename = import.meta.env.VITE_BASE_URL || '/document-management';
-
   return (
     <ErrorBoundary>
       <VoiceProvider>
         <DocumentProvider>
-          <Router basename={basename}>
+          <Router>
             <div className="App">
               <Routes>
                 <Route path="/" element={<Index />} />
