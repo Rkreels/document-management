@@ -23,73 +23,72 @@ function App() {
     <ErrorBoundary>
       <VoiceProvider>
         <DocumentProvider>
-          <Router>
+          <Router basename="/document-management">
             <div className="App">
               <Routes>
-                <Route path="/document-management" element={<Index />} />
-                <Route path="/document-management/dashboard" element={
+                <Route path="/" element={<Index />} />
+                <Route path="/dashboard" element={
                   <ErrorBoundary>
                     <Dashboard />
                   </ErrorBoundary>
                 } />
-                <Route path="/document-management/editor" element={
+                <Route path="/editor" element={
                   <ErrorBoundary>
                     <DocumentEditor />
                   </ErrorBoundary>
                 } />
-                <Route path="/document-management/editor/:documentId" element={
+                <Route path="/editor/:documentId" element={
                   <ErrorBoundary>
                     <DocumentEditor />
                   </ErrorBoundary>
                 } />
-                <Route path="/document-management/preview/:documentId" element={
+                <Route path="/preview/:documentId" element={
                   <ErrorBoundary>
                     <DocumentPreview />
                   </ErrorBoundary>
                 } />
-                <Route path="/document-management/document/:documentId" element={
+                <Route path="/document/:documentId" element={
                   <ErrorBoundary>
                     <DocumentRouter />
                   </ErrorBoundary>
                 } />
-                <Route path="/document-management/document/:documentId/:signerId" element={
+                <Route path="/document/:documentId/:signerId" element={
                   <ErrorBoundary>
                     <DocumentRouter />
                   </ErrorBoundary>
                 } />
-                <Route path="/document-management/settings" element={
+                <Route path="/settings" element={
                   <ErrorBoundary>
                     <Settings />
                   </ErrorBoundary>
                 } />
-                <Route path="/document-management/templates" element={
+                <Route path="/templates" element={
                   <ErrorBoundary>
                     <Templates />
                   </ErrorBoundary>
                 } />
-                <Route path="/document-management/template-editor" element={
+                <Route path="/template-editor" element={
                   <ErrorBoundary>
                     <TemplateEditor />
                   </ErrorBoundary>
                 } />
-                <Route path="/document-management/template-editor/:templateId" element={
+                <Route path="/template-editor/:templateId" element={
                   <ErrorBoundary>
                     <TemplateEditor />
                   </ErrorBoundary>
                 } />
-                <Route path="/document-management/signing/:documentId/:signerId" element={
+                <Route path="/signing/:documentId/:signerId" element={
                   <ErrorBoundary>
                     <SigningPage />
                   </ErrorBoundary>
                 } />
-                <Route path="/document-management/voice-training" element={
+                <Route path="/voice-training" element={
                   <ErrorBoundary>
                     <VoiceTrainingPage />
                   </ErrorBoundary>
                 } />
-                <Route path="/document-management/404" element={<NotFound />} />
-                <Route path="/" element={<Navigate to="/document-management" replace />} />
-                <Route path="*" element={<Navigate to="/document-management/404" replace />} />
+                <Route path="/404" element={<NotFound />} />
+                <Route path="*" element={<Navigate to="/404" replace />} />
               </Routes>
               <Toaster />
             </div>

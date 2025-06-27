@@ -17,7 +17,7 @@ const Index = () => {
     
     // Welcome message after a brief delay
     const timer = setTimeout(() => {
-      speak("Welcome to DocuSign Clone! I'm your voice-guided assistant. I'll help you learn how to create, manage, and sign documents digitally. Click 'Get Started' to begin your journey, or explore the features below to learn more about what we can do together.", 'high');
+      speak("Welcome to Document Management! I'm your voice-guided assistant. I'll help you learn how to create, manage, and sign documents digitally. Click 'Get Started' to begin your journey, or explore the features below to learn more about what we can do together.", 'high');
     }, 1000);
 
     return () => {
@@ -60,7 +60,7 @@ const Index = () => {
         {/* Hero Section */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
-            DocuSign Clone
+            Document Management
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Learn digital signatures with our voice-guided interactive platform. 

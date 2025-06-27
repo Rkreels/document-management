@@ -79,12 +79,12 @@ const Templates = () => {
       (window as any).voiceGuide?.provideActionGuidance('template-created', { templateName: template.name });
     }, 1500);
     
-    setTimeout(() => navigate(`/document-management/editor/${newDocument.id}`), 2000);
+    setTimeout(() => navigate(`/editor/${newDocument.id}`), 2000);
   };
 
   const handleEditTemplate = (templateId: string) => {
     speak("Taking you to the template editor where you can modify fields, signers, and other template settings.", 'normal');
-    setTimeout(() => navigate(`/document-management/template-editor/${templateId}`), 800);
+    setTimeout(() => navigate(`/template-editor/${templateId}`), 800);
   };
 
   const handleDeleteTemplate = (template: DocumentTemplate) => {
@@ -96,12 +96,12 @@ const Templates = () => {
 
   const handleNewTemplate = () => {
     speak("Let's create a new template. You'll be able to upload a PDF and set up reusable fields that can save you time when creating similar documents.", 'high');
-    setTimeout(() => navigate('/document-management/template-editor'), 1000);
+    setTimeout(() => navigate('/template-editor'), 1000);
   };
 
   const handleBackToDashboard = () => {
     speak("Returning to your dashboard.", 'normal');
-    setTimeout(() => navigate('/document-management/dashboard'), 500);
+    setTimeout(() => navigate('/dashboard'), 500);
   };
 
   return (

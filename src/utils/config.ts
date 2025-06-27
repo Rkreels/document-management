@@ -11,9 +11,9 @@ export const getFullUrl = (path: string) => {
   return cleanPath ? `${basePath}/${cleanPath}` : basePath;
 };
 
-// DocuSign-like configuration
+// Document Management System configuration
 export const APP_CONFIG = {
-  name: 'Document Management System',
+  name: 'Document Management',
   version: '1.0.0',
   features: {
     voiceAssistance: true,

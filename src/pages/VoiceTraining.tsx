@@ -17,7 +17,7 @@ const VoiceTrainingPage = () => {
     const timer = setTimeout(() => {
       announcePageChange(
         'Voice Training Center',
-        'Welcome to the comprehensive voice training system. Here you can learn to use voice guidance effectively, practice with interactive lessons, and master all features of the application. Choose a training module to begin your learning journey.'
+        'Welcome to the comprehensive voice training system for Document Management. Here you can learn to use voice guidance effectively, practice with interactive lessons, and master all features of the application. Choose a training module to begin your learning journey.'
       );
     }, 1000);
 

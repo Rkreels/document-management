@@ -84,7 +84,7 @@ const VoiceTraining: React.FC = () => {
     {
       id: 'basics',
       title: 'Voice Assistant Basics',
-      description: 'Learn the fundamentals of using voice guidance',
+      description: 'Learn the fundamentals of using voice guidance in Document Management',
       difficulty: 'beginner',
       estimatedTime: 15,
       completed: false,
@@ -93,11 +93,11 @@ const VoiceTraining: React.FC = () => {
           id: 'intro',
           title: 'Introduction to Voice Guidance',
           content: 'Welcome to voice-guided document management',
-          voiceScript: 'Welcome to voice training! I will guide you through learning how to use voice assistance effectively. This training will help you become proficient with voice-guided document signing and management.',
+          voiceScript: 'Welcome to voice training for Document Management! I will guide you through learning how to use voice assistance effectively. This training will help you become proficient with voice-guided document signing and management.',
           interactionType: 'listen',
           completed: false,
           actions: [
-            { type: 'speak', payload: 'Welcome to voice training!' },
+            { type: 'speak', payload: 'Welcome to Document Management voice training!' },
             { type: 'wait', duration: 2000 },
             { type: 'speak', payload: 'I will guide you through document management step by step.' }
           ]
@@ -244,7 +244,7 @@ const VoiceTraining: React.FC = () => {
     const lesson = module?.lessons[lessonIndex];
     
     if (lesson) {
-      announceWorkflowStep('Training Started', `Beginning ${lesson.title}. Listen carefully for instructions.`);
+      announceWorkflowStep('Training Started', `Beginning ${lesson.title} in Document Management. Listen carefully for instructions.`);
       
       setTimeout(() => {
         speak(lesson.voiceScript, 'high');
@@ -367,7 +367,7 @@ const VoiceTraining: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
-            Voice Training Center
+            Document Management Voice Training Center
             <Badge variant="outline" className="ml-2">
               {Math.round(getTotalProgress())}% Complete
             </Badge>
