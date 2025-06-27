@@ -17,33 +17,44 @@ const Templates = () => {
   const { speak, stop } = useVoice();
   const { templates, deleteTemplate, createDocumentFromTemplate, addTemplate } = useDocument();
   const [searchTerm, setSearchTerm] = useState('');
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize default templates if none exist
+  // Initialize default templates
   useEffect(() => {
-    console.log('Templates effect running. Current templates:', templates.length);
+    console.log('Templates component mounted. Current templates count:', templates.length);
+    console.log('Default templates count:', defaultTemplates.length);
     
-    if (!isInitialized && templates.length === 0) {
-      console.log('Initializing default templates...');
-      defaultTemplates.forEach((template, index) => {
-        console.log(`Adding template ${index + 1}:`, template.name);
-        addTemplate(template);
-      });
-      setIsInitialized(true);
-      console.log('Default templates initialization completed');
-    } else if (templates.length > 0 && !isInitialized) {
-      setIsInitialized(true);
-    }
-  }, [templates.length, addTemplate, isInitialized]);
+    const initializeTemplates = async () => {
+      if (templates.length === 0) {
+        console.log('No templates found, initializing default templates...');
+        
+        // Add all default templates
+        for (let i = 0; i < defaultTemplates.length; i++) {
+          const template = defaultTemplates[i];
+          console.log(`Adding template ${i + 1}/${defaultTemplates.length}:`, template.name);
+          addTemplate(template);
+        }
+        
+        console.log('All default templates added successfully');
+      } else {
+        console.log('Templates already exist:', templates.length);
+      }
+      
+      setIsLoading(false);
+    };
+
+    initializeTemplates();
+  }, [addTemplate, templates.length]);
 
   useEffect(() => {
     stop();
     
     const timer = setTimeout(() => {
-      if (templates.length === 0) {
-        speak("Welcome to the Templates library! I'm setting up comprehensive templates for official documents. You'll have 20+ professional templates for various business and legal needs.", 'normal');
+      const templateCount = templates.length;
+      if (templateCount > 0) {
+        speak(`You have ${templateCount} templates available. These include professional templates for contracts, agreements, forms, and official documents. You can search through them or create new documents from any template.`, 'normal');
       } else {
-        speak(`You have ${templates.length} templates available. These include professional templates for contracts, agreements, forms, and official documents. You can search through them or create new documents from any template.`, 'normal');
+        speak("Welcome to the Templates library! I'm setting up comprehensive templates for official documents. You'll have 20+ professional templates for various business and legal needs.", 'normal');
       }
     }, 1000);
 
@@ -68,12 +79,12 @@ const Templates = () => {
       (window as any).voiceGuide?.provideActionGuidance('template-created', { templateName: template.name });
     }, 1500);
     
-    setTimeout(() => navigate(`/editor/${newDocument.id}`), 2000);
+    setTimeout(() => navigate(`/document-management/editor/${newDocument.id}`), 2000);
   };
 
   const handleEditTemplate = (templateId: string) => {
     speak("Taking you to the template editor where you can modify fields, signers, and other template settings.", 'normal');
-    setTimeout(() => navigate(`/template-editor/${templateId}`), 800);
+    setTimeout(() => navigate(`/document-management/template-editor/${templateId}`), 800);
   };
 
   const handleDeleteTemplate = (template: DocumentTemplate) => {
@@ -85,12 +96,12 @@ const Templates = () => {
 
   const handleNewTemplate = () => {
     speak("Let's create a new template. You'll be able to upload a PDF and set up reusable fields that can save you time when creating similar documents.", 'high');
-    setTimeout(() => navigate('/template-editor'), 1000);
+    setTimeout(() => navigate('/document-management/template-editor'), 1000);
   };
 
   const handleBackToDashboard = () => {
     speak("Returning to your dashboard.", 'normal');
-    setTimeout(() => navigate('/dashboard'), 500);
+    setTimeout(() => navigate('/document-management/dashboard'), 500);
   };
 
   return (
@@ -110,7 +121,7 @@ const Templates = () => {
             </Button>
             <div>
               <h1 className="text-3xl font-bold">Document Templates</h1>
-              <p className="text-gray-600">{templates.length}+ Professional templates for official documents</p>
+              <p className="text-gray-600">{templates.length} Professional templates for official documents</p>
             </div>
           </div>
           <Button onClick={handleNewTemplate} className="flex items-center gap-2">
@@ -133,25 +144,39 @@ const Templates = () => {
           </div>
         </div>
 
+        {/* Debug Information */}
+        <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+          <p className="text-sm text-blue-800">
+            Debug Info: Templates loaded: {templates.length}, Default templates: {defaultTemplates.length}, 
+            Filtered: {filteredTemplates.length}, Loading: {isLoading ? 'Yes' : 'No'}
+          </p>
+        </div>
+
         {/* Templates Grid */}
-        {!isInitialized || filteredTemplates.length === 0 ? (
+        {isLoading ? (
           <Card className="text-center py-12">
             <CardContent>
               <FileText className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">
-                {!isInitialized ? "Loading templates..." : "No templates found"}
-              </h3>
+              <h3 className="text-xl font-semibold mb-2">Loading templates...</h3>
               <p className="text-gray-600 mb-6">
-                {!isInitialized 
-                  ? "Setting up 20+ professional templates for official documents."
+                Setting up {defaultTemplates.length} professional templates for official documents.
+              </p>
+            </CardContent>
+          </Card>
+        ) : filteredTemplates.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <FileText className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No templates found</h3>
+              <p className="text-gray-600 mb-6">
+                {templates.length === 0 
+                  ? "No templates are available. Click 'New Template' to create your first template."
                   : "Try adjusting your search terms to find the template you need."
                 }
               </p>
-              {isInitialized && templates.length === 0 && (
-                <Button onClick={handleNewTemplate}>
-                  Create Your First Template
-                </Button>
-              )}
+              <Button onClick={handleNewTemplate}>
+                Create Your First Template
+              </Button>
             </CardContent>
           </Card>
         ) : (
