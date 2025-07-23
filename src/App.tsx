@@ -23,72 +23,76 @@ function App() {
     <ErrorBoundary>
       <VoiceProvider>
         <DocumentProvider>
-          <Router basename="/document-management">
+          <Router>
             <div className="App">
               <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/dashboard" element={
+                {/* Root redirect to document-management */}
+                <Route path="/" element={<Navigate to="/document-management" replace />} />
+                
+                {/* Document Management Routes */}
+                <Route path="/document-management" element={<Index />} />
+                <Route path="/document-management/dashboard" element={
                   <ErrorBoundary>
                     <Dashboard />
                   </ErrorBoundary>
                 } />
-                <Route path="/editor" element={
+                <Route path="/document-management/editor" element={
                   <ErrorBoundary>
                     <DocumentEditor />
                   </ErrorBoundary>
                 } />
-                <Route path="/editor/:documentId" element={
+                <Route path="/document-management/editor/:documentId" element={
                   <ErrorBoundary>
                     <DocumentEditor />
                   </ErrorBoundary>
                 } />
-                <Route path="/preview/:documentId" element={
+                <Route path="/document-management/preview/:documentId" element={
                   <ErrorBoundary>
                     <DocumentPreview />
                   </ErrorBoundary>
                 } />
-                <Route path="/document/:documentId" element={
+                <Route path="/document-management/document/:documentId" element={
                   <ErrorBoundary>
                     <DocumentRouter />
                   </ErrorBoundary>
                 } />
-                <Route path="/document/:documentId/:signerId" element={
+                <Route path="/document-management/document/:documentId/:signerId" element={
                   <ErrorBoundary>
                     <DocumentRouter />
                   </ErrorBoundary>
                 } />
-                <Route path="/settings" element={
+                <Route path="/document-management/settings" element={
                   <ErrorBoundary>
                     <Settings />
                   </ErrorBoundary>
                 } />
-                <Route path="/templates" element={
+                <Route path="/document-management/templates" element={
                   <ErrorBoundary>
                     <Templates />
                   </ErrorBoundary>
                 } />
-                <Route path="/template-editor" element={
+                <Route path="/document-management/template-editor" element={
                   <ErrorBoundary>
                     <TemplateEditor />
                   </ErrorBoundary>
                 } />
-                <Route path="/template-editor/:templateId" element={
+                <Route path="/document-management/template-editor/:templateId" element={
                   <ErrorBoundary>
                     <TemplateEditor />
                   </ErrorBoundary>
                 } />
-                <Route path="/signing/:documentId/:signerId" element={
+                <Route path="/document-management/signing/:documentId/:signerId" element={
                   <ErrorBoundary>
                     <SigningPage />
                   </ErrorBoundary>
                 } />
-                <Route path="/voice-training" element={
+                <Route path="/document-management/voice-training" element={
                   <ErrorBoundary>
                     <VoiceTrainingPage />
                   </ErrorBoundary>
                 } />
-                <Route path="/404" element={<NotFound />} />
-                <Route path="*" element={<Navigate to="/404" replace />} />
+                <Route path="/document-management/404" element={<NotFound />} />
+                <Route path="*" element={<Navigate to="/document-management/404" replace />} />
               </Routes>
               <Toaster />
             </div>
