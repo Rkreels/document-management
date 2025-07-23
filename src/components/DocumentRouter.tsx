@@ -12,7 +12,7 @@ export const DocumentRouter: React.FC = () => {
   const document = documents.find(doc => doc.id === documentId);
 
   if (!document) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // If there's a signerId, show the workflow/signing interface

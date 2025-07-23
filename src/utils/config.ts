@@ -1,6 +1,6 @@
 
 export const getBasePath = (): string => {
-  return '/document-management';
+  return '';
 };
 
 export const getFullUrl = (path: string): string => {

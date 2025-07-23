@@ -45,7 +45,7 @@ const Index = () => {
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer" 
-                onClick={() => handleNavigation('/document-management/dashboard', 'Taking you to the main dashboard where you can manage all your documents')}>
+                onClick={() => handleNavigation('/dashboard', 'Taking you to the main dashboard where you can manage all your documents')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-6 w-6 text-blue-600" />
@@ -64,7 +64,7 @@ const Index = () => {
           </Card>
 
           <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer"
-                onClick={() => handleNavigation('/document-management/editor', 'Opening the document editor where you can create and edit documents')}>
+                onClick={() => handleNavigation('/editor', 'Opening the document editor where you can create and edit documents')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-6 w-6 text-green-600" />
@@ -83,7 +83,7 @@ const Index = () => {
           </Card>
 
           <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer"
-                onClick={() => handleNavigation('/document-management/templates', 'Opening the template library with over 20 pre-built templates')}>
+                onClick={() => handleNavigation('/templates', 'Opening the template library with over 20 pre-built templates')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Eye className="h-6 w-6 text-purple-600" />
@@ -148,7 +148,7 @@ const Index = () => {
             </CardHeader>
             <CardContent className="flex gap-4 justify-center">
               <Button 
-                onClick={() => handleNavigation('/document-management/dashboard', 'Taking you to the dashboard to begin managing your documents')}
+                onClick={() => handleNavigation('/dashboard', 'Taking you to the dashboard to begin managing your documents')}
                 size="lg"
               >
                 Get Started
@@ -157,7 +157,7 @@ const Index = () => {
               <Button 
                 variant="outline" 
                 size="lg"
-                onClick={() => handleNavigation('/document-management/voice-training', 'Opening voice training to learn how to use voice guidance features')}
+                onClick={() => handleNavigation('/voice-training', 'Opening voice training to learn how to use voice guidance features')}
               >
                 Learn Voice Features
               </Button>
