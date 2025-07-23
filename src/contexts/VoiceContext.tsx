@@ -204,6 +204,13 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       currentUtterance.current = null;
       isProcessingQueue.current = false;
       
+      // Handle permission errors gracefully
+      if (event.error === 'not-allowed') {
+        console.warn('Speech synthesis not allowed. User needs to enable permissions.');
+        // Update settings to disable voice if permission denied
+        updateSettings({ enabled: false });
+      }
+      
       // Continue processing queue on error
       setTimeout(() => {
         processQueue();

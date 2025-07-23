@@ -51,17 +51,17 @@ const Templates = () => {
 
   const handleCreateTemplate = () => {
     speak("Creating a new template. You'll be taken to the template editor.", 'normal');
-    setTimeout(() => navigate('/document-management/template-editor'), 500);
+    setTimeout(() => navigate('/template-editor'), 500);
   };
 
   const handleEditTemplate = (templateId: string) => {
     speak("Opening template for editing.", 'normal');
-    setTimeout(() => navigate(`/document-management/template-editor/${templateId}`), 500);
+    setTimeout(() => navigate(`/template-editor/${templateId}`), 500);
   };
 
   const handlePreviewTemplate = (templateId: string) => {
     speak("Opening template preview.", 'normal');
-    setTimeout(() => navigate(`/document-management/preview/${templateId}`), 500);
+    setTimeout(() => navigate(`/preview/${templateId}`), 500);
   };
 
   const getCategoryColor = (category: string) => {
