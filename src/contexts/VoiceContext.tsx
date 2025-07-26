@@ -199,19 +199,26 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     utterance.onerror = (event) => {
-      console.warn('Speech synthesis error:', event.error);
       setIsSpeaking(false);
       currentUtterance.current = null;
       isProcessingQueue.current = false;
       
-      // Handle permission errors gracefully
+      // Handle different error types appropriately
       if (event.error === 'not-allowed') {
-        console.warn('Speech synthesis not allowed. User needs to enable permissions.');
-        // Update settings to disable voice if permission denied
+        console.warn('Speech synthesis not allowed. Disabling voice features.');
         updateSettings({ enabled: false });
+        return; // Don't continue processing if permission denied
       }
       
-      // Continue processing queue on error
+      if (event.error === 'interrupted') {
+        console.log('Speech interrupted - normal when navigating quickly');
+        return; // Don't log as error, very common
+      }
+      
+      // Log other errors but continue
+      console.warn('Speech synthesis error:', event.error);
+      
+      // Continue processing queue on other errors
       setTimeout(() => {
         processQueue();
       }, 100);

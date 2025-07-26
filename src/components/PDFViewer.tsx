@@ -52,6 +52,11 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
 
     setIsLoading(true);
     setError(null);
+    
+    // Reset document state
+    setPdfDocument(null);
+    setCurrentPage(1);
+    setTotalPages(1);
 
     try {
       console.log('Loading PDF with data length:', pdfData.length);
@@ -70,6 +75,12 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
         cleanPdfData = pdfData.split('base64,')[1];
       }
 
+      // Validate base64 format
+      if (!cleanPdfData || cleanPdfData.length === 0) {
+        setError('Invalid PDF data: Empty content');
+        return;
+      }
+
       // Decode base64 with better error handling
       let uint8Array: Uint8Array;
       try {
@@ -79,6 +90,12 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
           uint8Array[i] = binaryString.charCodeAt(i);
         }
         console.log('PDF data decoded successfully, size:', uint8Array.length);
+        
+        // Basic PDF validation - check for PDF header
+        if (uint8Array.length < 5 || String.fromCharCode(...uint8Array.slice(0, 4)) !== '%PDF') {
+          setError('Invalid PDF format: Missing PDF header');
+          return;
+        }
       } catch (decodeError) {
         console.error('Error decoding base64 PDF data:', decodeError);
         setError('Invalid PDF data format. Please upload a valid PDF file.');

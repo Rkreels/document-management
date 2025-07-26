@@ -146,10 +146,11 @@ const Index = () => {
                 Begin your document management journey with our powerful platform
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex gap-4 justify-center">
+            <CardContent className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 onClick={() => handleNavigation('/dashboard', 'Taking you to the dashboard to begin managing your documents')}
                 size="lg"
+                className="w-full sm:w-auto"
               >
                 Get Started
                 <ArrowRight className="h-5 w-5 ml-2" />
@@ -158,6 +159,7 @@ const Index = () => {
                 variant="outline" 
                 size="lg"
                 onClick={() => handleNavigation('/voice-training', 'Opening voice training to learn how to use voice guidance features')}
+                className="w-full sm:w-auto"
               >
                 Learn Voice Features
               </Button>
