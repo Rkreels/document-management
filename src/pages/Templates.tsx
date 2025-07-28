@@ -44,9 +44,9 @@ const Templates = () => {
   }, [speak, stop]);
 
   const filteredTemplates = templates.filter(template =>
-    template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    template.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (template.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (template.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (template.category || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleCreateTemplate = () => {
