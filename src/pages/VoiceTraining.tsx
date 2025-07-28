@@ -28,7 +28,7 @@ const VoiceTrainingPage = () => {
   }, [speak, stop, announcePageChange]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen gradient-hero">
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
@@ -40,8 +40,8 @@ const VoiceTrainingPage = () => {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Voice Training Center</h1>
-            <p className="text-gray-600">Master voice-guided document management</p>
+            <h1 className="text-3xl font-bold text-foreground">Voice Training Center</h1>
+            <p className="text-muted-foreground">Master voice-guided document management</p>
           </div>
         </div>
 

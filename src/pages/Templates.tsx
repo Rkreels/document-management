@@ -80,12 +80,12 @@ const Templates = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen gradient-hero">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading templates...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading templates...</p>
             </div>
           </div>
         </div>
@@ -94,13 +94,13 @@ const Templates = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen gradient-hero">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Document Management - Templates</h1>
-            <p className="text-gray-600">Create and manage reusable document templates</p>
+            <h1 className="text-3xl font-bold text-foreground">Document Templates</h1>
+            <p className="text-muted-foreground">Create and manage reusable document templates</p>
           </div>
           <Button onClick={handleCreateTemplate}>
             <Plus className="h-4 w-4 mr-2" />
@@ -108,10 +108,6 @@ const Templates = () => {
           </Button>
         </div>
 
-        {/* Debug Info */}
-        <div className="mb-4 p-2 bg-gray-100 rounded text-sm">
-          <strong>Debug:</strong> {templates.length} templates loaded, {filteredTemplates.length} after filtering
-        </div>
 
         {/* Search */}
         <div className="mb-8">

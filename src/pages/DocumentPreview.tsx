@@ -143,7 +143,7 @@ const DocumentPreview = () => {
 
   if (!document) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen gradient-hero flex items-center justify-center">
         <Card>
           <CardContent className="p-8 text-center">
             <h2 className="text-xl font-semibold mb-2">Document Not Found</h2>
@@ -159,7 +159,7 @@ const DocumentPreview = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen gradient-hero">
       <SmartVoiceGuide />
       <div className="container mx-auto px-4 py-8">
         {/* Enhanced Header */}

@@ -145,7 +145,8 @@ const TemplateEditor = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen gradient-hero">
+      <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
@@ -254,6 +255,7 @@ const TemplateEditor = () => {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 };
