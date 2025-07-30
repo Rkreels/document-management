@@ -63,7 +63,8 @@ const Templates = () => {
 
   const handlePreviewTemplate = (templateId: string) => {
     speak("Opening template preview.", 'normal');
-    setTimeout(() => navigate(`/preview/${templateId}`), 500);
+    // Use template-preview route instead of document preview
+    setTimeout(() => navigate(`/template-preview/${templateId}`), 500);
   };
 
   const getCategoryColor = (category: string) => {
