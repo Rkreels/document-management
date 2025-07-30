@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { VoiceProvider } from '@/contexts/VoiceContext';
 import { DocumentProvider } from '@/contexts/DocumentContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { RealDataLoader } from '@/components/RealDataLoader';
 
 // Pages
 import Index from '@/pages/Index';

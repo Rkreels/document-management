@@ -16,6 +16,9 @@ import { AdvancedFieldEditor } from '@/components/AdvancedFieldEditor';
 import { WorkflowManager } from '@/components/WorkflowManager';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
+import { VoiceAssistant } from '@/components/VoiceAssistant';
+import { VoicePageAnnouncer } from '@/components/VoicePageAnnouncer';
+import { PageHeader } from '@/components/PageHeader';
 
 const DocumentEditor = () => {
   const { documentId } = useParams();
@@ -190,29 +193,30 @@ const DocumentEditor = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">
-              {documentId ? 'Edit Document' : 'Create Document'}
-            </h1>
-            {document.currentDocument && (
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline">{document.currentDocument.status}</Badge>
-                <Badge variant="secondary">
-                  {document.currentDocument.signingOrder} signing
-                </Badge>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex gap-2">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        {/* Voice Page Announcer */}
+        <VoicePageAnnouncer 
+          title={documentId ? 'Document Editor' : 'Document Creator'}
+          description={documentId 
+            ? `Edit document with advanced features including workflow management, field configuration, and notifications.`
+            : `Create a new document with comprehensive tools for adding fields, configuring workflows, and managing signers.`
+          }
+          features={[
+            'PDF document upload and preview',
+            'Interactive field placement',
+            'Advanced workflow configuration',
+            'Signer management',
+            'Notification settings',
+            'Document analytics'
+          ]}
+        />
+        
+        {/* Header */}
+        <PageHeader 
+          title={documentId ? 'Edit Document' : 'Create Document'}
+          description={document.currentDocument ? `Status: ${document.currentDocument.status} • ${document.currentDocument.signingOrder} signing` : 'Upload a PDF and configure document fields and workflow'}
+        >
           <Button onClick={handleSave}>
             <Save className="h-4 w-4 mr-2" />
             Save
@@ -223,8 +227,7 @@ const DocumentEditor = () => {
               Delete
             </Button>
           )}
-        </div>
-      </div>
+        </PageHeader>
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -386,6 +389,9 @@ const DocumentEditor = () => {
           onClose={() => setEditingField(null)}
         />
       )}
+      
+      <VoiceAssistant />
+      </div>
     </div>
   );
 };

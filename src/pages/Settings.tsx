@@ -10,6 +10,8 @@ import { useNavigate } from 'react-router-dom';
 import { useVoice } from '@/contexts/VoiceContext';
 import { useDocument } from '@/contexts/DocumentContext';
 import { VoiceAssistant } from '@/components/VoiceAssistant';
+import { VoicePageAnnouncer } from '@/components/VoicePageAnnouncer';
+import { PageHeader } from '@/components/PageHeader';
 import { toast } from '@/hooks/use-toast';
 
 const Settings = () => {
@@ -145,22 +147,26 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6">
+        {/* Voice Page Announcer */}
+        <VoicePageAnnouncer 
+          title="Settings and Configuration"
+          description="Customize your document management experience with voice settings, training preferences, data management, and system information."
+          features={[
+            'Voice assistant configuration',
+            'Training mode settings',
+            'Data export and backup',
+            'System information',
+            'Advanced voice features'
+          ]}
+        />
+        
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => navigate('/dashboard')}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Settings</h1>
-            <p className="text-gray-600">Customize your DocuSign Clone experience</p>
-          </div>
-        </div>
+        <PageHeader 
+          title="Settings"
+          description="Customize your DocuSign Clone experience"
+        />
 
         <Tabs defaultValue="voice" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">

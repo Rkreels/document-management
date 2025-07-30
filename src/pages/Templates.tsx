@@ -8,6 +8,8 @@ import { Search, Plus, Eye, Edit, Trash2, FileText, Users, Calendar } from 'luci
 import { useNavigate } from 'react-router-dom';
 import { useVoice } from '@/contexts/VoiceContext';
 import { VoiceAssistant } from '@/components/VoiceAssistant';
+import { VoicePageAnnouncer } from '@/components/VoicePageAnnouncer';
+import { PageHeader } from '@/components/PageHeader';
 import { defaultTemplates } from '@/utils/defaultTemplates';
 
 const Templates = () => {
@@ -66,16 +68,16 @@ const Templates = () => {
 
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: string } = {
-      'Legal': 'bg-blue-100 text-blue-800',
-      'Business': 'bg-green-100 text-green-800',
-      'HR': 'bg-purple-100 text-purple-800',
-      'Sales': 'bg-orange-100 text-orange-800',
-      'Real Estate': 'bg-red-100 text-red-800',
-      'Healthcare': 'bg-teal-100 text-teal-800',
-      'Finance': 'bg-yellow-100 text-yellow-800',
-      'Education': 'bg-indigo-100 text-indigo-800'
+      'Legal': 'bg-blue-50 text-blue-700 border-blue-200',
+      'Business': 'bg-green-50 text-green-700 border-green-200',
+      'HR': 'bg-purple-50 text-purple-700 border-purple-200',
+      'Sales': 'bg-orange-50 text-orange-700 border-orange-200',
+      'Real Estate': 'bg-red-50 text-red-700 border-red-200',
+      'Commercial': 'bg-teal-50 text-teal-700 border-teal-200',
+      'Finance': 'bg-yellow-50 text-yellow-700 border-yellow-200',
+      'Education': 'bg-indigo-50 text-indigo-700 border-indigo-200'
     };
-    return colors[category] || 'bg-gray-100 text-gray-800';
+    return colors[category] || 'bg-gray-50 text-gray-700 border-gray-200';
   };
 
   if (loading) {
@@ -94,19 +96,31 @@ const Templates = () => {
   }
 
   return (
-    <div className="min-h-screen gradient-hero">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
+        {/* Voice Page Announcer */}
+        <VoicePageAnnouncer 
+          title="Document Templates Library"
+          description={`Professional template library with ${templates.length} ready-to-use document templates. Search through categories including legal contracts, NDAs, employment agreements, and more.`}
+          features={[
+            'Search and filter templates',
+            'Preview template content',
+            'Edit existing templates', 
+            'Create custom templates',
+            'Professional document formats'
+          ]}
+        />
+        
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Document Templates</h1>
-            <p className="text-muted-foreground">Create and manage reusable document templates</p>
-          </div>
+        <PageHeader 
+          title="Document Templates"
+          description="Create and manage reusable document templates"
+        >
           <Button onClick={handleCreateTemplate}>
             <Plus className="h-4 w-4 mr-2" />
             Create Template
           </Button>
-        </div>
+        </PageHeader>
 
 
         {/* Search */}
@@ -133,7 +147,7 @@ const Templates = () => {
                       <CardTitle className="text-lg">{template.title}</CardTitle>
                       <CardDescription className="mt-2">{template.description}</CardDescription>
                     </div>
-                    <Badge className={getCategoryColor(template.category)}>
+                    <Badge variant="outline" className={getCategoryColor(template.category)}>
                       {template.category}
                     </Badge>
                   </div>

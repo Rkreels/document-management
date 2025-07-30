@@ -5,6 +5,8 @@ import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useVoice } from '@/contexts/VoiceContext';
 import { VoiceAssistant } from '@/components/VoiceAssistant';
+import { VoicePageAnnouncer } from '@/components/VoicePageAnnouncer';
+import { PageHeader } from '@/components/PageHeader';
 import VoiceTraining from '@/components/VoiceTraining';
 
 const VoiceTrainingPage = () => {
@@ -28,22 +30,26 @@ const VoiceTrainingPage = () => {
   }, [speak, stop, announcePageChange]);
 
   return (
-    <div className="min-h-screen gradient-hero">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6">
+        {/* Voice Page Announcer */}
+        <VoicePageAnnouncer 
+          title="Voice Training Center"
+          description="Comprehensive voice training system for mastering document management with voice guidance. Learn to use all features efficiently with interactive lessons and practice modules."
+          features={[
+            'Interactive training modules',
+            'Step-by-step voice guidance',
+            'Progress tracking',
+            'Practice exercises',
+            'Customizable learning pace'
+          ]}
+        />
+        
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => navigate('/dashboard')}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Voice Training Center</h1>
-            <p className="text-muted-foreground">Master voice-guided document management</p>
-          </div>
-        </div>
+        <PageHeader 
+          title="Voice Training Center"
+          description="Master voice-guided document management"
+        />
 
         {/* Training Component */}
         <VoiceTraining />
