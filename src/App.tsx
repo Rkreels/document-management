@@ -16,6 +16,7 @@ import Templates from '@/pages/Templates';
 import TemplateEditor from '@/pages/TemplateEditor';
 import SigningPage from '@/pages/SigningPage';
 import TemplatePreview from '@/pages/TemplatePreview';
+import VoiceTrainingPage from '@/pages/VoiceTraining';
 import NotFound from '@/pages/NotFound';
 import { DocumentRouter } from '@/components/DocumentRouter';
 
