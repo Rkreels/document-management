@@ -7,7 +7,7 @@ import { useVoice } from '@/contexts/VoiceContext';
 import { VoiceAssistant } from '@/components/VoiceAssistant';
 import { VoicePageAnnouncer } from '@/components/VoicePageAnnouncer';
 import { PageHeader } from '@/components/PageHeader';
-import VoiceTraining from '@/components/VoiceTraining';
+import VoiceTrainingFix from '@/components/VoiceTrainingFix';
 
 const VoiceTrainingPage = () => {
   const navigate = useNavigate();
@@ -52,7 +52,7 @@ const VoiceTrainingPage = () => {
         />
 
         {/* Training Component */}
-        <VoiceTraining />
+        <VoiceTrainingFix />
       </div>
       
       <VoiceAssistant />

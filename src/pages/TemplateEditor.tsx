@@ -32,7 +32,7 @@ const TemplateEditor = () => {
   useEffect(() => {
     stop();
 
-    if (templateId) {
+    if (templateId && templateId !== 'new') {
       if (currentTemplate) {
         setName(currentTemplate.name);
         setDescription(currentTemplate.description || '');
@@ -41,15 +41,15 @@ const TemplateEditor = () => {
         setContent(currentTemplate.content || '');
         speak(`Editing template: ${currentTemplate.name}. You can modify the template details and fields.`, 'normal');
       } else {
-        speak("Template not found. Taking you back to templates.", 'high');
-        setTimeout(() => navigate('/templates'), 2000);
+        // Don't automatically navigate away, just show message
+        console.log("Template not found for ID:", templateId);
       }
     } else {
       speak("Creating a new template. Enter the template details and upload a PDF to get started.", 'normal');
     }
 
     return () => stop();
-  }, [templateId, currentTemplate, navigate, speak, stop]);
+  }, [templateId, currentTemplate, speak, stop]);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -83,23 +83,33 @@ const TemplateEditor = () => {
       signers: currentTemplate?.signers || [],
     };
 
-    if (templateId && currentTemplate) {
-      updateTemplate(templateId, templateData);
+    try {
+      if (templateId && templateId !== 'new' && currentTemplate) {
+        updateTemplate(templateId, templateData);
+        toast({
+          title: "Success",
+          description: "Template updated successfully.",
+        });
+        speak("Template updated successfully!", 'high');
+      } else {
+        const newTemplate = createTemplate(name, fields);
+        // Update with additional data
+        updateTemplate(newTemplate.id, templateData);
+        // Don't navigate immediately, let user stay on the page
+        toast({
+          title: "Success",
+          description: "Template created successfully.",
+        });
+        speak("Template created successfully! You can now add fields and signers.", 'high');
+      }
+    } catch (error) {
+      console.error('Error saving template:', error);
       toast({
-        title: "Success",
-        description: "Template updated successfully.",
+        title: "Error",
+        description: "Failed to save template. Please try again.",
+        variant: "destructive",
       });
-      speak("Template updated successfully!", 'high');
-    } else {
-      const newTemplate = createTemplate(name, fields);
-      // Update with additional data
-      updateTemplate(newTemplate.id, templateData);
-      navigate(`/template-editor/${newTemplate.id}`);
-      toast({
-        title: "Success",
-        description: "Template created successfully.",
-      });
-      speak("Template created successfully! You can now add fields and signers.", 'high');
+      speak("Error saving template. Please try again.", 'high');
     }
   };
 

@@ -45,7 +45,8 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
 
   const loadPDF = async () => {
     if (!pdfData || pdfData.trim() === '') {
-      setError('No PDF content available. Please upload a PDF file or load sample content.');
+      console.log('No PDF data provided to PDFViewer');
+      setError('No PDF content available. Please upload a PDF file first.');
       setIsLoading(false);
       return;
     }
@@ -77,7 +78,18 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
 
       // Validate base64 format
       if (!cleanPdfData || cleanPdfData.length === 0) {
-        setError('Invalid PDF data: Empty content');
+        console.log('Empty PDF data after cleaning');
+        setError('Invalid PDF data: Please upload a valid PDF file');
+        return;
+      }
+
+      // Additional validation for base64 format
+      try {
+        // Test if it's valid base64
+        atob(cleanPdfData.substring(0, 100));
+      } catch (e) {
+        console.log('Invalid base64 format');
+        setError('Invalid PDF format: Please upload a valid PDF file');
         return;
       }
 
