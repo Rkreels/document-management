@@ -87,6 +87,11 @@ function App() {
                     <SigningPage />
                   </ErrorBoundary>
                 } />
+                <Route path="/template-preview/:templateId" element={
+                  <ErrorBoundary>
+                    <TemplatePreview />
+                  </ErrorBoundary>
+                } />
                 <Route path="/voice-training" element={
                   <ErrorBoundary>
                     <VoiceTrainingPage />
