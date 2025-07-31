@@ -37,15 +37,42 @@ const DocumentEditor = () => {
     stop();
 
     if (documentId) {
-      const currentDocument = document.documents.find(doc => doc.id === documentId);
-      if (currentDocument) {
-        document.setCurrentDocument(currentDocument);
-        setTitle(currentDocument.title);
-        setContent(currentDocument.content);
-        speak(`Editing ${currentDocument.title}. You now have access to advanced features including workflow management, analytics, and notifications.`, 'normal');
+      // Check if it's a template ID (starts with 'template-')
+      if (documentId.startsWith('template-')) {
+        // Load template and convert to document
+        const template = document.templates.find(t => t.id === documentId);
+        if (template) {
+          const templateDocument = {
+            id: template.id,
+            title: template.name,
+            content: template.content,
+            fields: template.fields,
+            signers: template.signers,
+            status: 'draft' as const,
+            createdAt: template.createdAt,
+            updatedAt: template.updatedAt,
+            signingOrder: 'sequential' as const
+          };
+          document.setCurrentDocument(templateDocument);
+          setTitle(template.name);
+          setContent(template.content);
+          speak(`Editing template: ${template.name}. You can modify fields, content, and configure workflow settings.`, 'normal');
+        } else {
+          speak("Template not found. Taking you back to templates.", 'high');
+          setTimeout(() => navigate('/templates'), 2000);
+        }
       } else {
-        speak("Document not found. Taking you back to the dashboard.", 'high');
-        setTimeout(() => navigate('/dashboard'), 2000);
+        // Load regular document
+        const currentDocument = document.documents.find(doc => doc.id === documentId);
+        if (currentDocument) {
+          document.setCurrentDocument(currentDocument);
+          setTitle(currentDocument.title);
+          setContent(currentDocument.content);
+          speak(`Editing ${currentDocument.title}. You now have access to advanced features including workflow management, analytics, and notifications.`, 'normal');
+        } else {
+          speak("Document not found. Taking you back to the dashboard.", 'high');
+          setTimeout(() => navigate('/dashboard'), 2000);
+        }
       }
     } else {
       document.setCurrentDocument(null);
@@ -55,7 +82,7 @@ const DocumentEditor = () => {
     }
 
     return () => stop();
-  }, [documentId, document.documents, document.setCurrentDocument, navigate, speak, stop]);
+  }, [documentId, document.documents, document.templates, document.setCurrentDocument, navigate, speak, stop]);
 
   useEffect(() => {
     if (document.currentDocument) {
