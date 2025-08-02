@@ -46,7 +46,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   const loadPDF = async () => {
     if (!pdfData || pdfData.trim() === '') {
       console.log('No PDF data provided to PDFViewer');
-      setError('No PDF content available. Please upload a PDF file first.');
+      setError('No PDF content available. Upload a document or load a sample.');
       setIsLoading(false);
       return;
     }

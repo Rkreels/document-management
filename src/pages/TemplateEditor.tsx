@@ -62,21 +62,30 @@ const TemplateEditor = () => {
     }
   };
 
+  const handleLoadSample = () => {
+    const sampleData = `JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPJ4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9GMSA0IDAgUgo+Pgo+PgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNSAwIFIKPj4KZW5kb2JqCjQgMCBvYmoKPDwKL1R5cGUgL0ZvbnQKL1N1YnR5cGUgL1R5cGUxCi9CYXNlRm9udCAvSGVsdmV0aWNhCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9MZW5ndGggMTIwCj4+CnN0cmVhbQpCVAovRjEgMTIgVGYKNTAgNzUwIFRkCihTYW1wbGUgVGVtcGxhdGUgRG9jdW1lbnQpIFRqCjAgLTIwIFRkCihUaGlzIGlzIGEgc2FtcGxlIFBERiBmb3IgdGVtcGxhdGUgY3JlYXRpb24uKSBUagowIC0yMCBUZAooRmllbGRzIGNhbiBiZSBhZGRlZCBhbmQgY29uZmlndXJlZCBpbiB0aGlzIGRvY3VtZW50LikgVGoKRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDUgMDAwMDAgbiAKMDAwMDAwMDMxMiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjQ4MwolJUVPRg==`;
+    setContent(sampleData);
+    speak("Sample PDF loaded successfully. You can now see the document preview and add fields.", 'normal');
+  };
+
   const handleSave = () => {
-    if (!name || !description || !content) {
+    if (!name || !description) {
       toast({
         title: "Error",
-        description: "Name, description, and PDF content are required.",
+        description: "Name and description are required.",
         variant: "destructive",
       });
-      speak("Please fill in all required fields and upload a PDF.", 'high');
+      speak("Please fill in the template name and description.", 'high');
       return;
     }
+
+    // Use sample content if no content provided
+    const finalContent = content || `JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPJ4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9GMSA0IDAgUgo+Pgo+PgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNSAwIFIKPj4KZW5kb2JqCjQgMCBvYmoKPDwKL1R5cGUgL0ZvbnQKL1N1YnR5cGUgL1R5cGUxCi9CYXNlRm9udCAvSGVsdmV0aWNhCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9MZW5ndGggMTIwCj4+CnN0cmVhbQpCVAovRjEgMTIgVGYKNTAgNzUwIFRkCihTYW1wbGUgVGVtcGxhdGUgRG9jdW1lbnQpIFRqCjAgLTIwIFRkCihUaGlzIGlzIGEgc2FtcGxlIFBERiBmb3IgdGVtcGxhdGUgY3JlYXRpb24uKSBUagowIC0yMCBUZAooRmllbGRzIGNhbiBiZSBhZGRlZCBhbmQgY29uZmlndXJlZCBpbiB0aGlzIGRvY3VtZW50LikgVGoKRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDUgMDAwMDAgbiAKMDAwMDAwMDMxMiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjQ4MwolJUVPRg==`;
 
     const templateData = {
       name,
       description,
-      content,
+      content: finalContent,
       category: category || undefined,
       tags: tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : undefined,
       fields: fields,
@@ -95,7 +104,6 @@ const TemplateEditor = () => {
         const newTemplate = createTemplate(name, fields);
         // Update with additional data
         updateTemplate(newTemplate.id, templateData);
-        // Don't navigate immediately, let user stay on the page
         toast({
           title: "Success",
           description: "Template created successfully.",
@@ -229,8 +237,13 @@ const TemplateEditor = () => {
             />
           </div>
           <div>
-            <Label htmlFor="content">Upload PDF *</Label>
-            <Input type="file" id="content" accept=".pdf" onChange={handleContentChange} />
+            <Label htmlFor="content">Upload PDF</Label>
+            <div className="flex gap-2">
+              <Input type="file" id="content" accept=".pdf" onChange={handleContentChange} className="flex-1" />
+              <Button variant="outline" onClick={handleLoadSample}>
+                Load Sample PDF
+              </Button>
+            </div>
             {content && (
               <p className="text-sm text-green-600 mt-1">PDF uploaded successfully</p>
             )}

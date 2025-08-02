@@ -16,6 +16,8 @@ import { AdvancedFieldEditor } from '@/components/AdvancedFieldEditor';
 import { WorkflowManager } from '@/components/WorkflowManager';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
+import { EnhancedPDFUpload } from '@/components/EnhancedPDFUpload';
+import { DocumentStatusManager } from '@/components/DocumentStatusManager';
 import { VoiceAssistant } from '@/components/VoiceAssistant';
 import { VoicePageAnnouncer } from '@/components/VoicePageAnnouncer';
 import { PageHeader } from '@/components/PageHeader';
@@ -109,9 +111,12 @@ const DocumentEditor = () => {
   };
 
   const handleLoadSample = () => {
-    const sampleData = `JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPJ4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9GMSA0IDAgUgo+Pgo+PgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNSAwIFIKPj4KZW5kb2JqCjQgMCBvYmoKPDwKL1R5cGUgL0ZvbnQKL1N1YnR5cGUgL1R5cGUxCi9CYXNlRm9udCAvSGVsdmV0aWNhCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9MZW5ndGggNDQKPj4Kc3RyZWFtCkJUCi9GMSA4IFRmCjEwMCA3MDAgVGQKKFNhbXBsZSBEb2N1bWVudCkgVGoKRVQKZW5kc3RyZWFtCmVuZG9iago6cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDUgMDAwMDAgbiAKMDAwMDAwMDMxMiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjQwNQolJUVPRg==`;
+    const sampleData = `JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPJ4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9GMSA0IDAgUgo+Pgo+PgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNSAwIFIKPj4KZW5kb2JqCjQgMCBvYmoKPDwKL1R5cGUgL0ZvbnQKL1N1YnR5cGUgL1R5cGUxCi9CYXNlRm9udCAvSGVsdmV0aWNhCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9MZW5ndGggMTIwCj4+CnN0cmVhbQpCVAovRjEgMTIgVGYKNTAgNzUwIFRkCihTYW1wbGUgQ29udHJhY3QgRG9jdW1lbnQpIFRqCjAgLTIwIFRkCihUaGlzIGlzIGEgc2FtcGxlIFBERiBmb3IgZGVtb25zdHJhdGlvbiBwdXJwb3Nlcy4pIFRqCjAgLTIwIFRkCihGaWVsZHMgY2FuIGJlIGFkZGVkIGFuZCBjb25maWd1cmVkIGluIHRoaXMgZG9jdW1lbnQuKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU4IDAwMDAwIG4gCjAwMDAwMDAxMTUgMDAwMDAgbiAKMDAwMDAwMDI0NSAwMDAwMCBuIAowMDAwMDAwMzEyIDAwMDAwIG4gCnRyYWlsZXIKPDwKL1NpemUgNgovUm9vdCAxIDAgUgo+PgpzdGFydHhyZWYKNDgzCiUlRU9G`;
     setContent(sampleData);
     setTitle('Sample Contract Document');
+    if (document.currentDocument) {
+      document.updateDocument(document.currentDocument.id, { content: sampleData, title: 'Sample Contract Document' });
+    }
     speak("Sample PDF loaded successfully. You can now see the document preview and add fields.", 'normal');
   };
 
@@ -386,9 +391,12 @@ const DocumentEditor = () => {
         </TabsContent>
 
         {/* Workflow Tab */}
-        <TabsContent value="workflow">
+        <TabsContent value="workflow" className="space-y-6">
           {document.currentDocument && (
-            <WorkflowManager document={document.currentDocument} />
+            <>
+              <DocumentStatusManager document={document.currentDocument} />
+              <WorkflowManager document={document.currentDocument} />
+            </>
           )}
         </TabsContent>
 
