@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, FileText, Users, CheckCircle, Clock, Send, Archive, BarChart3, Bell, Smartphone, Palette, Settings, Link, Shield } from 'lucide-react';
+import { Plus, FileText, Users, CheckCircle, Clock, Send, Archive, BarChart3, Bell, Smartphone, Palette, Settings, Link, Shield, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useVoice } from '@/contexts/VoiceContext';
 import { useDocument } from '@/contexts/DocumentContext';
@@ -169,6 +169,14 @@ const Dashboard = () => {
             <p className="text-muted-foreground">Manage your documents and signing workflows</p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => window.open('https://skillsim.vercel.app/dashboard', '_self')}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 hover:from-purple-700 hover:to-blue-700"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Master Dashboard
+            </Button>
             <Button variant="outline" onClick={handleViewTemplates}>
               <Archive className="h-4 w-4 mr-2" />
               Templates
@@ -291,6 +299,12 @@ const Dashboard = () => {
 
         {/* Main Content */}
         {renderMainContent()}
+
+        {/* Global Search - Hidden by default, can be activated with Ctrl+K */}
+        <div id="global-search-portal" />
+        
+        {/* Enhanced Workflow Manager */}
+        <div id="workflow-manager-portal" />
       </div>
       
       <VoiceAssistant />
