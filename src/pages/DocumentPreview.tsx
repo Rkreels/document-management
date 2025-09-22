@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useVoice } from '@/contexts/VoiceContext';
 import { useDocument, DocumentField } from '@/contexts/DocumentContext';
-import { UniversalFileViewer } from '@/components/UniversalFileViewer';
+import { BulletproofDocumentViewer } from '@/components/BulletproofDocumentViewer';
 import { SignaturePad } from '@/components/SignaturePad';
 import { TextFieldInput } from '@/components/TextFieldInput';
 import { DocumentSender } from '@/components/DocumentSender';
@@ -303,27 +303,15 @@ const DocumentPreview = () => {
           <TabsContent value="preview" className="mt-6">
             <Card>
               <CardContent className="p-0">
-                {document.content ? (
-                  <UniversalFileViewer
-                    fileData={document.content}
-                    fileName={document.title}
-                    mimeType="application/pdf"
-                    fields={document.fields}
-                    onFieldClick={handleFieldClick}
-                    signingMode={signingMode}
-                    viewMode={signingMode ? 'signing' : 'preview'}
-                  />
-                ) : (
-                  <div className="p-8 text-center">
-                    <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Document Content</h3>
-                    <p className="text-gray-600 mb-4">Upload a document to preview it here.</p>
-                    <Button onClick={() => navigate(`/editor/${documentId}`)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Document
-                    </Button>
-                  </div>
-                )}
+                <BulletproofDocumentViewer
+                  fileData={document.content || ''}
+                  fileName={document.title}
+                  mimeType="application/pdf"
+                  fields={document.fields}
+                  onFieldClick={handleFieldClick}
+                  signingMode={signingMode}
+                  viewMode={signingMode ? 'signing' : 'preview'}
+                />
               </CardContent>
             </Card>
           </TabsContent>

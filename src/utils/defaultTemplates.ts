@@ -1,8 +1,14 @@
 import { DocumentTemplate } from '@/contexts/DocumentContext';
+import { RobustPDFGenerator } from './robustPDFGenerator';
 
-// Generate a valid sample PDF with the template name
+// Generate bulletproof sample PDFs that never fail
 const generateSamplePDF = (templateName: string): string => {
-  return 'JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPJ4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9GMSA0IDAgUgo+Pgo+PgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNSAwIFIKPj4KZW5kb2JqCjQgMCBvYmoKPDwKL1R5cGUgL0ZvbnQKL1N1YnR5cGUgL1R5cGUxCi9CYXNlRm9udCAvSGVsdmV0aWNhCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9MZW5ndGggMTIwCj4+CnN0cmVhbQpCVAovRjEgMTIgVGYKNTAgNzUwIFRkCihTYW1wbGUgRG9jdW1lbnQ6IEVtcGxveW1lbnQgQ29udHJhY3QpIFRqCjAgLTIwIFRkCihUaGlzIGlzIGEgc2FtcGxlIFBERiBmb3IgZGVtb25zdHJhdGlvbiBwdXJwb3Nlcy4pIFRqCjAgLTIwIFRkCihGaWVsZHMgY2FuIGJlIGFkZGVkIGFuZCBjb25maWd1cmVkIGluIHRoaXMgZG9jdW1lbnQuKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU4IDAwMDAwIG4gCjAwMDAwMDAxMTUgMDAwMDAgbiAKMDAwMDAwMDI0NSAwMDAwMCBuIAowMDAwMDAwMzEyIDAwMDAwIG4gCnRyYWlsZXIKPDwKL1NpemUgNgovUm9vdCAxIDAgUgo+PgpzdGFydHhyZWYKNDgzCiUlRU9G';
+  try {
+    return RobustPDFGenerator.generateValidSamplePDF(templateName);
+  } catch (error) {
+    console.warn('PDF generation failed, using fallback:', error);
+    return RobustPDFGenerator.generateFallbackDocument(templateName);
+  }
 };
 
 export const defaultTemplates: DocumentTemplate[] = [

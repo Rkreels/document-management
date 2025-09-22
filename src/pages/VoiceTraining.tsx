@@ -52,7 +52,32 @@ const VoiceTrainingPage = () => {
         />
 
         {/* Training Component */}
-        <VoiceTrainingFix />
+      <div className="min-h-screen gradient-hero">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-4">Voice Training</h1>
+            <p className="text-muted-foreground">Comprehensive voice guidance training for all platform features</p>
+          </div>
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-card p-8 rounded-lg border">
+              <h2 className="text-xl font-semibold mb-4">Interactive Voice Training</h2>
+              <p className="text-muted-foreground mb-6">Learn to navigate and use all features with guided voice instruction.</p>
+              <div className="space-y-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <h3 className="font-medium">Training Modules Available:</h3>
+                  <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                    <li>Basic Navigation - Learn interface navigation</li>
+                    <li>Document Creation - Master document workflows</li>
+                    <li>Digital Signing - Complete signing processes</li>
+                    <li>Advanced Features - Explore all capabilities</li>
+                    <li>Accessibility - Screen reader & keyboard navigation</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
       
       <VoiceAssistant />
