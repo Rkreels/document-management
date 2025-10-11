@@ -163,44 +163,60 @@ const DocumentPreview = () => {
       <SmartVoiceGuide />
       <div className="container mx-auto px-4 py-8">
         {/* Enhanced Header */}
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate('/dashboard')}>
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
             <div>
               <h1 className="text-2xl font-bold">{document.title}</h1>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex flex-wrap items-center gap-2 mt-1">
                 <Badge variant="outline">{document.status}</Badge>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-muted-foreground">
                   Last updated {new Date(document.updatedAt).toLocaleDateString()}
                 </span>
               </div>
             </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setSigningMode(!signingMode)}>
-              {signingMode ? 'Exit Signing Mode' : 'Test Signing'}
-            </Button>
-            <Button variant="outline" onClick={() => navigate(`/editor/${documentId}`)}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-            <Button variant="outline" onClick={downloadDocument}>
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
-            <Button variant="outline">
-              <Share className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-            {document.status === 'draft' && (
-              <Button onClick={() => setActiveTab('send')}>
-                <Send className="h-4 w-4 mr-2" />
-                Send for Signing
+            
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setSigningMode(!signingMode)}
+              >
+                {signingMode ? 'Exit Signing' : 'Test Signing'}
               </Button>
-            )}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate(`/editor/${documentId}`)}
+              >
+                <Edit className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Edit</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={downloadDocument}
+              >
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Download</span>
+              </Button>
+              <Button variant="outline" size="sm">
+                <Share className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Share</span>
+              </Button>
+              {document.status === 'draft' && (
+                <Button size="sm" onClick={() => setActiveTab('send')}>
+                  <Send className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Send for Signing</span>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -273,32 +289,34 @@ const DocumentPreview = () => {
 
         {/* Enhanced Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
-            <TabsTrigger value="preview" className="flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              <span className="hidden sm:inline">Preview</span>
-            </TabsTrigger>
-            <TabsTrigger value="signers" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Signers</span>
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <History className="h-4 w-4" />
-              <span className="hidden sm:inline">History</span>
-            </TabsTrigger>
-            <TabsTrigger value="comments" className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              <span className="hidden sm:inline">Comments</span>
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">Security</span>
-            </TabsTrigger>
-            <TabsTrigger value="send" className="flex items-center gap-2">
-              <Send className="h-4 w-4" />
-              <span className="hidden sm:inline">Send</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 pb-2">
+            <TabsList className="inline-flex w-auto min-w-full">
+              <TabsTrigger value="preview" className="flex items-center gap-1 sm:gap-2">
+                <Eye className="h-4 w-4" />
+                <span>Preview</span>
+              </TabsTrigger>
+              <TabsTrigger value="signers" className="flex items-center gap-1 sm:gap-2">
+                <Users className="h-4 w-4" />
+                <span>Signers</span>
+              </TabsTrigger>
+              <TabsTrigger value="history" className="flex items-center gap-1 sm:gap-2">
+                <History className="h-4 w-4" />
+                <span>History</span>
+              </TabsTrigger>
+              <TabsTrigger value="comments" className="flex items-center gap-1 sm:gap-2">
+                <MessageSquare className="h-4 w-4" />
+                <span>Comments</span>
+              </TabsTrigger>
+              <TabsTrigger value="security" className="flex items-center gap-1 sm:gap-2">
+                <Shield className="h-4 w-4" />
+                <span>Security</span>
+              </TabsTrigger>
+              <TabsTrigger value="send" className="flex items-center gap-1 sm:gap-2">
+                <Send className="h-4 w-4" />
+                <span>Send</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="preview" className="mt-6">
             <Card>

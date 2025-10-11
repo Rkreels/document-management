@@ -152,10 +152,17 @@ export const DocumentSender: React.FC<DocumentSenderProps> = ({
       }
     });
 
-    // Send the document
+    // Send the document and generate signing links
     if (sendingSettings.sendImmediately) {
       sendDocument(document.id, sendingSettings.message);
-      speak('Document sent immediately with enterprise-grade security and workflow features', 'high');
+      
+      // Show signing link generation info
+      toast({
+        title: 'Signing Links Generated',
+        description: `Unique signing links created for ${document.signers.length} signer(s). Links sent via email.`,
+      });
+      
+      speak(`Document sent successfully with enterprise-grade security. Each signer will receive a unique secure link at ${document.signers.map(s => s.email).join(', ')}`, 'high');
     } else {
       speak(`Document scheduled for delivery on ${sendingSettings.scheduledDate?.toLocaleDateString()}`, 'normal');
     }

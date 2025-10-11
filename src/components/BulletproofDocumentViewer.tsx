@@ -385,39 +385,66 @@ remains functional regardless of document format.
     return fields
       .filter(field => field.page === currentPage)
       .map(field => {
+        const isFieldFilled = !!field.value;
+        const isActiveField = signingMode && !isFieldFilled;
+        
         const style: React.CSSProperties = {
           position: 'absolute',
           left: `${field.x}%`,
           top: `${field.y}%`,
           width: `${field.width}%`,
           height: `${field.height}%`,
-          border: signingMode ? '2px solid hsl(var(--primary))' : '2px dashed hsl(var(--border))',
-          backgroundColor: signingMode ? 'hsl(var(--primary) / 0.1)' : 'hsl(var(--muted) / 0.5)',
-          cursor: signingMode ? 'pointer' : 'default',
+          border: isActiveField 
+            ? '3px solid hsl(var(--primary))' 
+            : isFieldFilled 
+            ? '2px solid hsl(var(--green-600))' 
+            : '2px dashed hsl(var(--border))',
+          backgroundColor: isActiveField 
+            ? 'hsl(var(--primary) / 0.2)' 
+            : isFieldFilled 
+            ? 'hsl(var(--green-50))' 
+            : 'hsl(var(--muted) / 0.5)',
+          cursor: signingMode ? 'pointer' : editMode ? 'move' : 'default',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '12px',
+          fontSize: 'clamp(10px, 1vw, 12px)',
           color: 'hsl(var(--foreground))',
-          fontWeight: '500',
+          fontWeight: isActiveField ? '600' : '500',
           pointerEvents: signingMode || editMode ? 'auto' : 'none',
           transition: 'all 0.2s ease',
           userSelect: 'none',
-          zIndex: 10,
-          borderRadius: '4px'
+          zIndex: isActiveField ? 20 : 10,
+          borderRadius: '4px',
+          boxShadow: isActiveField ? '0 0 0 4px hsl(var(--primary) / 0.1)' : 'none'
         };
 
         const getFieldContent = () => {
           if (field.value) {
             if (field.type === 'signature') {
-              return '✓ Signed';
+              return (
+                <span className="flex items-center gap-1 text-green-700">
+                  <CheckCircle className="h-3 w-3" />
+                  Signed
+                </span>
+              );
             } else if (field.type === 'checkbox') {
               return field.value === 'true' ? '☑' : '☐';
             } else {
               const text = field.value.toString();
-              return text.length > 15 ? text.substring(0, 15) + '...' : text;
+              return text.length > 20 ? text.substring(0, 20) + '...' : text;
             }
           }
+          
+          if (signingMode) {
+            return (
+              <span className="flex flex-col items-center gap-0.5">
+                <span className="text-[10px] opacity-70">Click to</span>
+                <span className="font-semibold">{field.type}</span>
+              </span>
+            );
+          }
+          
           return field.label || field.type;
         };
 
@@ -426,14 +453,17 @@ remains functional regardless of document format.
             key={field.id}
             style={style}
             onClick={() => handleFieldClick(field)}
-            className="field-overlay hover:opacity-80"
-            title={`${field.label} (${field.type})${field.required ? ' - Required' : ''}`}
+            onMouseEnter={() => isActiveField && speak(`${field.label || field.type} field ready to fill`, 'low')}
+            className="field-overlay hover:opacity-90 active:scale-95"
+            title={`${field.label || field.type}${field.required ? ' (Required)' : ''} - ${isFieldFilled ? 'Completed' : 'Click to fill'}`}
           >
-            <span className="text-xs text-center px-1">
+            <span className="text-xs text-center px-1 leading-tight">
               {getFieldContent()}
             </span>
-            {field.required && (
-              <span className="absolute -top-1 -right-1 text-red-500 text-xs">*</span>
+            {field.required && !isFieldFilled && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px]">
+                *
+              </span>
             )}
           </div>
         );
