@@ -138,7 +138,77 @@ export const generateDemoData = () => {
     {
       id: 'doc_1',
       title: 'Employment Agreement - John Smith',
-      content: 'JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovTGVuZ3RoIDY2CgovRmlsdGVyIC9GbGF0ZURlY29kZQo+PgpzdHJlYW0KeJxNjjEOwjAMRe+SuoNtpU3SHoABiRGJgbKgDlRV751kYOCN773v5xgvNjPEXMh2jlmpJxYjFSGh2wAz3HG5X5Jqu4h2XzSQfOTqfRYgaslUqKQp8Xv2C2lX1DaR4eIzNmPIldnCxUeNmjgBCYRAEBERU+gq7uIrCRMfcNT9VFd3S2YEF2CQnQ==endstream',
+      content: btoa(`%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1250 >>
+stream
+BT
+/F1 14 Tf
+250 750 Td
+(EMPLOYMENT AGREEMENT) Tj
+/F1 11 Tf
+0 -30 Td
+(This Employment Agreement is entered into on May 15, 2024, between:) Tj
+0 -25 Td
+(EMPLOYER: TechCorp Industries Inc.) Tj
+0 -15 Td
+(Address: 123 Business Plaza, San Francisco, CA 94102) Tj
+0 -25 Td
+(EMPLOYEE: John Smith) Tj
+0 -15 Td
+(Address: 456 Resident St, San Francisco, CA 94103) Tj
+0 -30 Td
+(1. POSITION AND DUTIES) Tj
+0 -15 Td
+(The Employee is hired for the position of Senior Software Engineer.) Tj
+0 -15 Td
+(Employee agrees to perform duties professionally and diligently.) Tj
+0 -25 Td
+(2. COMPENSATION) Tj
+0 -15 Td
+(Annual salary: $125,000, payable bi-weekly via direct deposit.) Tj
+0 -25 Td
+(3. BENEFITS) Tj
+0 -15 Td
+(Health insurance, 401k matching, 20 days PTO, stock options.) Tj
+0 -25 Td
+(4. START DATE) Tj
+0 -15 Td
+(Employment commences on June 1, 2024.) Tj
+0 -30 Td
+(SIGNATURES:) Tj
+0 -25 Td
+(Employee: _____________________ Date: _____) Tj
+0 -20 Td
+(HR Manager: ___________________ Date: _____) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000068 00000 n 
+0000000125 00000 n 
+0000000252 00000 n 
+0000000321 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1623
+%%EOF`),
       fields: demoFields.map((field, index) => ({
         ...field,
         id: `field_${index + 1}`,
@@ -173,7 +243,77 @@ export const generateDemoData = () => {
     {
       id: 'doc_2',
       title: 'NDA - Client Partnership',
-      content: 'JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovTGVuZ3RoIDY2CgovRmlsdGVyIC9GbGF0ZURlY29kZQo+PgpzdHJlYW0KeJxNjjEOwjAMRe+SuoNtpU3SHoABiRGJgbKgDlRV751kYOCN773v5xgvNjPEXMh2jlmpJxYjFSGh2wAz3HG5X5Jqu4h2XzSQfOTqfRYgaslUqKQp8Xv2C2lX1DaR4eIzNmPIldnCxUeNmjgBCYRAEBERU+gq7uIrCRMfcNT9VFd3S2YEF2CQnQ==endstream',
+      content: btoa(`%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1180 >>
+stream
+BT
+/F1 14 Tf
+220 750 Td
+(NON-DISCLOSURE AGREEMENT) Tj
+/F1 11 Tf
+0 -30 Td
+(This NDA is made on May 20, 2024, between:) Tj
+0 -25 Td
+(DISCLOSING PARTY: TechCorp Industries Inc.) Tj
+0 -15 Td
+(Address: 123 Business Plaza, San Francisco, CA 94102) Tj
+0 -25 Td
+(RECEIVING PARTY: Innovation Partners LLC) Tj
+0 -15 Td
+(Address: 789 Partner Ave, San Jose, CA 95110) Tj
+0 -30 Td
+(1. CONFIDENTIAL INFORMATION) Tj
+0 -15 Td
+(All technical and business information disclosed hereby.) Tj
+0 -25 Td
+(2. OBLIGATIONS) Tj
+0 -15 Td
+(Receiving Party agrees to:) Tj
+0 -15 Td
+(a) Maintain strict confidentiality) Tj
+0 -15 Td
+(b) Not disclose to third parties) Tj
+0 -15 Td
+(c) Use only for stated business purpose) Tj
+0 -25 Td
+(3. TERM) Tj
+0 -15 Td
+(Agreement effective for 3 years from execution date.) Tj
+0 -30 Td
+(SIGNATURES:) Tj
+0 -25 Td
+(Disclosing Party: ______________ Date: _____) Tj
+0 -20 Td
+(Receiving Party: ______________ Date: _____) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000068 00000 n 
+0000000125 00000 n 
+0000000252 00000 n 
+0000000321 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1553
+%%EOF`),
       fields: [
         {
           id: 'field_nda_1',
@@ -236,7 +376,77 @@ export const generateDemoData = () => {
     {
       id: 'doc_3',
       title: 'Vendor Service Agreement',
-      content: 'JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovTGVuZ3RoIDY2CgovRmlsdGVyIC9GbGF0ZURlY29kZQo+PgpzdHJlYW0KeJxNjjEOwjAMRe+SuoNtpU3SHoABiRGJgbKgDlRV751kYOCN773v5xgvNjPEXMh2jlmpJxYjFSGh2wAz3HG5X5Jqu4h2XzSQfOTqfRYgaslUqKQp8Xv2C2lX1DaR4eIzNmPIldnCxUeNmjgBCYRAEBERU+gq7uIrCRMfcNT9VFd3S2YEF2CQnQ==endstream',
+      content: btoa(`%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1100 >>
+stream
+BT
+/F1 14 Tf
+210 750 Td
+(PROFESSIONAL SERVICES AGREEMENT) Tj
+/F1 11 Tf
+0 -30 Td
+(This Services Agreement dated May 23, 2024, between:) Tj
+0 -25 Td
+(CLIENT: TechCorp Industries Inc.) Tj
+0 -15 Td
+(Address: 123 Business Plaza, San Francisco, CA 94102) Tj
+0 -25 Td
+(SERVICE PROVIDER: Expert Consulting Group) Tj
+0 -15 Td
+(Address: 321 Professional Way, Oakland, CA 94612) Tj
+0 -30 Td
+(1. SERVICES) Tj
+0 -15 Td
+(Provider shall deliver IT consulting and implementation services.) Tj
+0 -25 Td
+(2. COMPENSATION) Tj
+0 -15 Td
+(Total contract value: $75,000) Tj
+0 -15 Td
+(Payment: Net 30 upon milestone completion) Tj
+0 -25 Td
+(3. TERM) Tj
+0 -15 Td
+(Six month engagement commencing June 1, 2024) Tj
+0 -25 Td
+(4. DELIVERABLES) Tj
+0 -15 Td
+(System architecture design, implementation, training) Tj
+0 -30 Td
+(SIGNATURES:) Tj
+0 -25 Td
+(Client: _______________________ Date: _____) Tj
+0 -20 Td
+(Service Provider: _____________ Date: _____) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000068 00000 n 
+0000000125 00000 n 
+0000000252 00000 n 
+0000000321 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1473
+%%EOF`),
       fields: [],
       signers: [],
       status: 'draft',
@@ -247,7 +457,81 @@ export const generateDemoData = () => {
     {
       id: 'doc_4',
       title: 'Partnership Agreement - Completed',
-      content: 'JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovTGVuZ3RoIDY2CgovRmlsdGVyIC9GbGF0ZURlY29kZQo+PgpzdHJlYW0KeJxNjjEOwjAMRe+SuoNtpU3SHoABiRGJgbKgDlRV751kYOCN773v5xgvNjPEXMh2jlmpJxYjFSGh2wAz3HG5X5Jqu4h2XzSQfOTqfRYgaslUqKQp8Xv2C2lX1DaR4eIzNmPIldnCxUeNmjgBCYRAEBERU+gq7uIrCRMfcNT9VFd3S2YEF2CQnQ==endstream',
+      content: btoa(`%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1220 >>
+stream
+BT
+/F1 14 Tf
+240 750 Td
+(STRATEGIC PARTNERSHIP AGREEMENT) Tj
+/F1 11 Tf
+0 -30 Td
+(This Partnership Agreement dated May 8, 2024, between:) Tj
+0 -25 Td
+(PARTY A: TechCorp Industries Inc.) Tj
+0 -15 Td
+(Address: 123 Business Plaza, San Francisco, CA 94102) Tj
+0 -25 Td
+(PARTY B: Innovation Partners LLC) Tj
+0 -15 Td
+(Address: 789 Partner Ave, San Jose, CA 95110) Tj
+0 -30 Td
+(1. PURPOSE) Tj
+0 -15 Td
+(Joint development and marketing of enterprise software solutions.) Tj
+0 -25 Td
+(2. TERM) Tj
+0 -15 Td
+(Initial term of 5 years with automatic renewal provisions.) Tj
+0 -25 Td
+(3. CONTRIBUTIONS) Tj
+0 -15 Td
+(Party A: Technology platform and development resources) Tj
+0 -15 Td
+(Party B: Market access and distribution channels) Tj
+0 -25 Td
+(4. REVENUE SHARING) Tj
+0 -15 Td
+(Net revenues split 60/40 after deducting agreed expenses.) Tj
+0 -25 Td
+(5. GOVERNANCE) Tj
+0 -15 Td
+(Joint steering committee with equal representation.) Tj
+0 -30 Td
+(EXECUTED SIGNATURES:) Tj
+0 -25 Td
+(Party A: Mark Thompson    Date: 05/10/2024) Tj
+0 -20 Td
+(Party B: Amanda Foster    Date: 05/11/2024) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000068 00000 n 
+0000000125 00000 n 
+0000000252 00000 n 
+0000000321 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1593
+%%EOF`),
       fields: [],
       signers: [
         {
@@ -286,7 +570,81 @@ export const generateDemoData = () => {
       id: 'template_1',
       name: 'Employment Agreement Template',
       description: 'Standard employment agreement for new hires',
-      content: 'JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovTGVuZ3RoIDY2CgovRmlsdGVyIC9GbGF0ZURlY29kZQo+PgpzdHJlYW0KeJxNjjEOwjAMRe+SuoNtpU3SHoABiRGJgbKgDlRV751kYOCN773v5xgvNjPEXMh2jlmpJxYjFSGh2wAz3HG5X5Jqu4h2XzSQfOTqfRYgaslUqKQp8Xv2C2lX1DaR4eIzNmPIldnCxUeNmjgBCYRAEBERU+gq7uIrCRMfcNT9VFd3S2YEF2CQnQ==endstream',
+      content: btoa(`%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1300 >>
+stream
+BT
+/F1 14 Tf
+250 750 Td
+(EMPLOYMENT AGREEMENT TEMPLATE) Tj
+/F1 11 Tf
+0 -30 Td
+(This Employment Agreement is entered into on [Date], between:) Tj
+0 -25 Td
+(EMPLOYER: [Company Name]) Tj
+0 -15 Td
+(Address: [Company Address]) Tj
+0 -25 Td
+(EMPLOYEE: [Employee Name]) Tj
+0 -15 Td
+(Address: [Employee Address]) Tj
+0 -30 Td
+(1. POSITION AND DUTIES) Tj
+0 -15 Td
+(The Employee is hired for the position of [Position Title].) Tj
+0 -15 Td
+(Employee shall perform all duties professionally and competently.) Tj
+0 -25 Td
+(2. COMPENSATION) Tj
+0 -15 Td
+(Annual salary: [Annual Salary], payable [Payment Schedule].) Tj
+0 -25 Td
+(3. BENEFITS) Tj
+0 -15 Td
+(Health insurance, retirement plan, paid time off, and other benefits.) Tj
+0 -25 Td
+(4. EMPLOYMENT TERM) Tj
+0 -15 Td
+(Employment commences on [Start Date] and continues at will.) Tj
+0 -25 Td
+(5. CONFIDENTIALITY) Tj
+0 -15 Td
+(Employee agrees to protect all proprietary company information.) Tj
+0 -30 Td
+(SIGNATURES:) Tj
+0 -25 Td
+(Employee: _____________________ Date: _____) Tj
+0 -20 Td
+(HR Representative: ____________ Date: _____) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000068 00000 n 
+0000000125 00000 n 
+0000000252 00000 n 
+0000000321 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1673
+%%EOF`),
       fields: demoFields.map((field, index) => ({
         ...field,
         id: `template_field_${index + 1}`,
@@ -323,7 +681,79 @@ export const generateDemoData = () => {
       id: 'template_2',
       name: 'NDA Template',
       description: 'Non-disclosure agreement for clients and partners',
-      content: 'JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovTGVuZ3RoIDY2CgovRmlsdGVyIC9GbGF0ZURlY29kZQo+PgpzdHJlYW0KeJxNjjEOwjAMRe+SuoNtpU3SHoABiRGJgbKgDlRV751kYOCN773v5xgvNjPEXMh2jlmpJxYjFSGh2wAz3HG5X5Jqu4h2XzSQfOTqfRYgaslUqKQp8Xv2C2lX1DaR4eIzNmPIldnCxUeNmjgBCYRAEBERU+gq7uIrCRMfcNT9VFd3S2YEF2CQnQ==endstream',
+      content: btoa(`%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1200 >>
+stream
+BT
+/F1 14 Tf
+220 750 Td
+(NON-DISCLOSURE AGREEMENT TEMPLATE) Tj
+/F1 11 Tf
+0 -30 Td
+(This NDA is made on [Date], between:) Tj
+0 -25 Td
+(DISCLOSING PARTY: [Party Name]) Tj
+0 -15 Td
+(Address: [Address]) Tj
+0 -25 Td
+(RECEIVING PARTY: [Party Name]) Tj
+0 -15 Td
+(Address: [Address]) Tj
+0 -30 Td
+(1. CONFIDENTIAL INFORMATION) Tj
+0 -15 Td
+(All technical, business, and proprietary information disclosed.) Tj
+0 -25 Td
+(2. OBLIGATIONS OF RECEIVING PARTY) Tj
+0 -15 Td
+(a) Maintain strict confidentiality of all information) Tj
+0 -15 Td
+(b) Not disclose to any third parties without written consent) Tj
+0 -15 Td
+(c) Use information solely for the stated business purpose) Tj
+0 -25 Td
+(3. TERM AND TERMINATION) Tj
+0 -15 Td
+(Agreement shall remain in effect for [Duration] from date.) Tj
+0 -25 Td
+(4. REMEDIES) Tj
+0 -15 Td
+(Breach may cause irreparable harm; injunctive relief available.) Tj
+0 -30 Td
+(SIGNATURES:) Tj
+0 -25 Td
+(Disclosing Party: ______________ Date: _____) Tj
+0 -20 Td
+(Receiving Party: ______________ Date: _____) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000068 00000 n 
+0000000125 00000 n 
+0000000252 00000 n 
+0000000321 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1573
+%%EOF`),
       fields: [
         {
           id: 'template_nda_field_1',
