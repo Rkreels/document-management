@@ -103,20 +103,7 @@ const VoiceTrainingFix: React.FC = () => {
     }
   ];
 
-  useEffect(() => {
-    const savedProgress = localStorage.getItem('voiceTraining_progress');
-    if (savedProgress) {
-      try {
-        setTrainingProgress(JSON.parse(savedProgress));
-      } catch (e) {
-        console.error('Error loading training progress:', e);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('voiceTraining_progress', JSON.stringify(trainingProgress));
-  }, [trainingProgress]);
+  // Training progress managed in memory only - no localStorage
 
   const startTraining = (moduleId: string, lessonIndex: number = 0) => {
     const module = trainingModules.find(m => m.id === moduleId);
@@ -239,7 +226,6 @@ const VoiceTrainingFix: React.FC = () => {
     setTrainingProgress({});
     setIsTrainingActive(false);
     setCurrentLesson(0);
-    localStorage.removeItem('voiceTraining_progress');
     
     speak('Training progress has been reset.', 'normal');
     

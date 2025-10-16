@@ -79,21 +79,21 @@ const VoiceContext = createContext<VoiceContextType | undefined>(undefined);
 
 export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<VoiceSettings>({
-    enabled: true,
+    enabled: false,
     rate: 1,
     pitch: 1,
     volume: 0.8,
     voice: null,
     language: 'en-US',
-    autoSpeak: true,
+    autoSpeak: false,
     interruptions: true,
     speed: 1,
     trainingMode: false,
-    detailedGuidance: true,
-    contextualHelp: true,
-    fieldDescriptions: true,
+    detailedGuidance: false,
+    contextualHelp: false,
+    fieldDescriptions: false,
     smartPausing: true,
-    interactiveMode: true,
+    interactiveMode: false,
   });
 
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -110,9 +110,9 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     currentLesson: 0,
     completedLessons: [],
     trainingPreferences: {
-      autoProgress: true,
-      repeatInstructions: true,
-      detailedExplanations: true,
+      autoProgress: false,
+      repeatInstructions: false,
+      detailedExplanations: false,
       practiceMode: false,
     }
   });

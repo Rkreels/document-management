@@ -97,9 +97,8 @@ const Settings = () => {
   };
 
   const handleClearData = () => {
-    if (confirm('Are you sure you want to clear all data? This action cannot be undone and will reset all training progress.')) {
-      localStorage.clear();
-      speak("All data has been cleared, including training progress. You'll be redirected to the home page to start fresh.", 'high');
+    if (confirm('Are you sure you want to reset all settings?')) {
+      speak("Settings have been reset to defaults.", 'high');
       
       toast({
         title: "Data cleared",
@@ -135,15 +134,7 @@ const Settings = () => {
   };
 
   const getStorageUsage = () => {
-    try {
-      const documentsData = localStorage.getItem('docuSignClone_documents') || '[]';
-      const settingsData = localStorage.getItem('docuSignClone_voiceSettings') || '{}';
-      const trainingData = localStorage.getItem('docuSignClone_voiceTraining') || '{}';
-      const totalSize = new Blob([documentsData + settingsData + trainingData]).size;
-      return (totalSize / 1024).toFixed(2); // KB
-    } catch {
-      return '0';
-    }
+    return '0'; // No localStorage usage
   };
 
   return (
@@ -566,10 +557,10 @@ const Settings = () => {
                   </div>
                   
                   <div>
-                    <label className="font-medium text-sm">Local Storage</label>
+                    <label className="font-medium text-sm">Memory Usage</label>
                     <div className="mt-1">
-                      <Badge variant={typeof window !== 'undefined' && 'localStorage' in window ? 'default' : 'destructive'}>
-                        {typeof window !== 'undefined' && 'localStorage' in window ? 'Available' : 'Not Available'}
+                      <Badge variant="default">
+                        In-Memory Only (No Storage)
                       </Badge>
                     </div>
                   </div>

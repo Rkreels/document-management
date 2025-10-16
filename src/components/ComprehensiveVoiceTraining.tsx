@@ -248,23 +248,7 @@ export const ComprehensiveVoiceTraining: React.FC = () => {
   const progressTimerRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
-    // Initialize training progress from localStorage
-    const saved = localStorage.getItem('voiceTrainingProgress');
-    if (saved) {
-      try {
-        setTrainingProgress(JSON.parse(saved));
-      } catch (error) {
-        console.warn('Failed to load training progress:', error);
-      }
-    }
-    
-    // Calculate global progress
-    calculateGlobalProgress();
-  }, []);
-
-  useEffect(() => {
-    // Save progress to localStorage
-    localStorage.setItem('voiceTrainingProgress', JSON.stringify(trainingProgress));
+    // Training progress managed in memory only - no localStorage
     calculateGlobalProgress();
   }, [trainingProgress]);
 
