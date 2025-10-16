@@ -181,13 +181,14 @@ const DocumentEditor = () => {
         height: 6
       },
       page: 1,
-      signerId: selectedSigner || undefined,
+      signerId: selectedSigner && selectedSigner !== '' ? selectedSigner : undefined,
       required: true,
       label: `${selectedFieldType} field`,
     };
     
     document.addField(document.currentDocument.id, newField);
     setSelectedFieldType('');
+    setSelectedSigner(undefined);
     speak(`${newField.type} field added. Click on it to configure advanced properties.`, 'normal');
   };
 
@@ -337,15 +338,19 @@ const DocumentEditor = () => {
                   <Label htmlFor="signer">Assign to Signer (Optional)</Label>
                   <Select value={selectedSigner} onValueChange={setSelectedSigner}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a signer" />
+                      <SelectValue placeholder="No signer assigned" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
                       {document.currentDocument?.signers.map((signer) => (
                         <SelectItem key={signer.id} value={signer.id}>
-                          {signer.name}
+                          {signer.name} - {signer.email}
                         </SelectItem>
                       ))}
+                      {(!document.currentDocument?.signers || document.currentDocument.signers.length === 0) && (
+                        <div className="px-2 py-3 text-sm text-muted-foreground text-center">
+                          No signers added yet
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

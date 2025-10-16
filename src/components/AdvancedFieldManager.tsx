@@ -72,7 +72,7 @@ export const AdvancedFieldManager: React.FC<AdvancedFieldManagerProps> = ({
       position: { x, y },
       size: { width, height },
       page: 1,
-      signerId: selectedSigner || undefined,
+      signerId: selectedSigner && selectedSigner !== '' ? selectedSigner : undefined,
       required: true,
       label: fieldType?.label || selectedFieldType,
     };
@@ -200,15 +200,19 @@ export const AdvancedFieldManager: React.FC<AdvancedFieldManagerProps> = ({
                 <Label>Assign to Signer (Optional)</Label>
                 <Select value={selectedSigner} onValueChange={setSelectedSigner}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select signer" />
+                    <SelectValue placeholder="No signer assigned" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All signers</SelectItem>
                     {signers.map((signer) => (
                       <SelectItem key={signer.id} value={signer.id}>
                         {signer.name} ({signer.email})
                       </SelectItem>
                     ))}
+                    {signers.length === 0 && (
+                      <div className="px-2 py-3 text-sm text-muted-foreground text-center">
+                        No signers added yet
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
