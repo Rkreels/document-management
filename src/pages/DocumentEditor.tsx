@@ -318,7 +318,7 @@ const DocumentEditor = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="fieldType">Field Type</Label>
-                  <Select onValueChange={setSelectedFieldType}>
+                  <Select value={selectedFieldType} onValueChange={setSelectedFieldType}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a field type" />
                     </SelectTrigger>
@@ -335,11 +335,12 @@ const DocumentEditor = () => {
                 </div>
                 <div>
                   <Label htmlFor="signer">Assign to Signer (Optional)</Label>
-                  <Select onValueChange={setSelectedSigner}>
+                  <Select value={selectedSigner} onValueChange={setSelectedSigner}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a signer" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="">None</SelectItem>
                       {document.currentDocument?.signers.map((signer) => (
                         <SelectItem key={signer.id} value={signer.id}>
                           {signer.name}
