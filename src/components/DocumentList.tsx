@@ -158,7 +158,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             <CardContent className="p-8 text-center">
               <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No documents found</h3>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 {searchTerm || statusFilter !== 'all' 
                   ? "Try adjusting your search or filter criteria."
                   : "Start by creating your first document."
@@ -189,7 +189,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                       </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {document.updatedAt.toLocaleDateString()}
@@ -205,11 +205,12 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => navigate(`/preview/${document.id}`)}
+                      title="Preview"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -217,6 +218,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={() => navigate(`/editor/${document.id}`)}
+                      title="Edit"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -225,6 +227,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                         variant="outline"
                         size="sm"
                         onClick={() => sendDocument(document.id)}
+                        title="Send"
                       >
                         <Send className="h-4 w-4" />
                       </Button>
@@ -232,7 +235,12 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => deleteDocument(document.id)}
+                      onClick={() => {
+                        if (confirm(`Delete "${document.title}"?`)) {
+                          deleteDocument(document.id);
+                        }
+                      }}
+                      title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

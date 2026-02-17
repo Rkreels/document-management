@@ -126,7 +126,7 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-5">
+                  <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
                     <TabsTrigger value="all">
                       All ({documents.length})
                     </TabsTrigger>
@@ -137,10 +137,10 @@ const Dashboard = () => {
                       Sent ({documents.filter(d => d.status === 'sent').length})
                     </TabsTrigger>
                     <TabsTrigger value="completed">
-                      Completed ({documents.filter(d => d.status === 'completed').length})
+                      Done ({documents.filter(d => d.status === 'completed').length})
                     </TabsTrigger>
                     <TabsTrigger value="archived">
-                      Archived ({documents.filter(d => ['voided', 'declined', 'expired'].includes(d.status)).length})
+                      Other ({documents.filter(d => ['voided', 'declined', 'expired'].includes(d.status)).length})
                     </TabsTrigger>
                   </TabsList>
 
@@ -163,16 +163,16 @@ const Dashboard = () => {
     <div className="min-h-screen gradient-hero">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
             <p className="text-muted-foreground">Manage your documents and signing workflows</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button 
               variant="outline" 
               onClick={() => window.open('https://skillsim.vercel.app/dashboard', '_self')}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 hover:from-purple-700 hover:to-blue-700"
+              className="bg-gradient-to-r from-primary to-accent text-primary-foreground border-0"
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Master Dashboard
@@ -189,62 +189,32 @@ const Dashboard = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="mb-8">
+        <div className="mb-8 overflow-x-auto">
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant={mainView === 'documents' ? 'default' : 'outline'}
-              onClick={() => setMainView('documents')}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Documents
-            </Button>
-            <Button
-              variant={mainView === 'analytics' ? 'default' : 'outline'}
-              onClick={() => setMainView('analytics')}
-            >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Analytics
-            </Button>
-            <Button
-              variant={mainView === 'notifications' ? 'default' : 'outline'}
-              onClick={() => setMainView('notifications')}
-            >
-              <Bell className="h-4 w-4 mr-2" />
-              Notifications
-            </Button>
-            <Button
-              variant={mainView === 'integrations' ? 'default' : 'outline'}
-              onClick={() => setMainView('integrations')}
-            >
-              <Link className="h-4 w-4 mr-2" />
-              Integrations
-            </Button>
-            <Button
-              variant={mainView === 'branding' ? 'default' : 'outline'}
-              onClick={() => setMainView('branding')}
-            >
-              <Palette className="h-4 w-4 mr-2" />
-              Branding
-            </Button>
-            <Button
-              variant={mainView === 'mobile' ? 'default' : 'outline'}
-              onClick={() => setMainView('mobile')}
-            >
-              <Smartphone className="h-4 w-4 mr-2" />
-              Mobile
-            </Button>
-            <Button
-              variant={mainView === 'security' ? 'default' : 'outline'}
-              onClick={() => setMainView('security')}
-            >
-              <Shield className="h-4 w-4 mr-2" />
-              Security
-            </Button>
+            {[
+              { key: 'documents', icon: FileText, label: 'Documents' },
+              { key: 'analytics', icon: BarChart3, label: 'Analytics' },
+              { key: 'notifications', icon: Bell, label: 'Notifications' },
+              { key: 'integrations', icon: Link, label: 'Integrations' },
+              { key: 'branding', icon: Palette, label: 'Branding' },
+              { key: 'mobile', icon: Smartphone, label: 'Mobile' },
+              { key: 'security', icon: Shield, label: 'Security' },
+            ].map(({ key, icon: Icon, label }) => (
+              <Button
+                key={key}
+                variant={mainView === key ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setMainView(key)}
+              >
+                <Icon className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="text-xs sm:text-sm">{label}</span>
+              </Button>
+            ))}
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Documents</CardTitle>
