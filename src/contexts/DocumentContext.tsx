@@ -209,147 +209,131 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
 
   useEffect(() => {
-    // Demo data
+    const basePdf = 'JVBERi0xLjUKJcOiw6AKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4Kc3RhcnR4cmVmCjE1MgklRU9GCg==';
+    
+    const makeField = (id: string, type: DocumentField['type'], label: string, signerId?: string): DocumentField => ({
+      id, type, label, required: true,
+      position: { x: 10 + Math.random() * 40, y: 20 + Math.random() * 50 },
+      size: { width: type === 'signature' ? 25 : 20, height: type === 'signature' ? 8 : 5 },
+      x: 10, y: 20, width: 20, height: 5, page: 1, signerId
+    });
+
+    const makeSigner = (id: string, name: string, email: string, role: string, order: number, status: Signer['status'], signedAt?: Date): Signer => ({
+      id, name, email, role, status, order, signedAt, canDelegate: order === 1, requireAuth: 'email' as const, reminderCount: 0
+    });
+
     const initialDocuments: Document[] = [
       {
-        id: '1',
-        title: 'Sample NDA',
-        content: 'JVBERi0xLjUKJcOiw6AKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4Kc3RhcnR4cmVmCjE1MgklRU9GCg==',
-        status: 'draft',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        fields: [
-          {
-            id: '101',
-            type: 'signature',
-            label: 'Signature',
-            required: true,
-            position: { x: 50, y: 100 },
-            size: { width: 150, height: 50 },
-            x: 50,
-            y: 100,
-            width: 150,
-            height: 50,
-            page: 1,
-            signerId: 'signer1'
-          },
-          {
-            id: '102',
-            type: 'text',
-            label: 'Name',
-            required: true,
-            position: { x: 50, y: 150 },
-            size: { width: 200, height: 30 },
-            x: 50,
-            y: 150,
-            width: 200,
-            height: 30,
-            page: 1,
-            signerId: 'signer1'
-          }
-        ],
-        signers: [
-          {
-            id: 'signer1',
-            name: 'John Doe',
-            email: 'john.doe@example.com',
-            role: 'Signer',
-            status: 'pending',
-            order: 1
-          }
-        ],
-        signingOrder: 'sequential'
+        id: 'doc-1', title: 'Employment Agreement - Sarah Chen', content: basePdf, status: 'completed',
+        createdAt: new Date('2025-12-01'), updatedAt: new Date('2025-12-15'), completedAt: new Date('2025-12-15'), sentAt: new Date('2025-12-02'),
+        fields: [makeField('f1', 'signature', 'Employee Signature', 's1'), makeField('f2', 'text', 'Full Name', 's1'), makeField('f3', 'date', 'Date', 's1')],
+        signers: [makeSigner('s1', 'Sarah Chen', 'sarah.chen@techcorp.com', 'Employee', 1, 'signed', new Date('2025-12-10')), makeSigner('s2', 'David Park', 'david.park@hr.com', 'HR Manager', 2, 'signed', new Date('2025-12-15'))],
+        signingOrder: 'sequential', tags: ['employment', 'hr'], folder: 'HR', priority: 'high',
+        audit: { views: 12, downloads: 3, ipAddresses: ['192.168.1.1'] }
       },
       {
-        id: '2',
-        title: 'Partnership Agreement',
-        content: 'JVBERi0xLjUKJcOiw6AKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4Kc3RhcnR4cmVmCjE1MgklRU9GCg==',
-        status: 'in-progress',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        sentAt: new Date(),
-        fields: [
-          {
-            id: '201',
-            type: 'signature',
-            label: 'Partner 1 Signature',
-            required: true,
-            position: { x: 50, y: 100 },
-            size: { width: 150, height: 50 },
-            x: 50,
-            y: 100,
-            width: 150,
-            height: 50,
-            page: 1,
-            signerId: 'partner1'
-          },
-          {
-            id: '202',
-            type: 'signature',
-            label: 'Partner 2 Signature',
-            required: true,
-            position: { x: 50, y: 200 },
-            size: { width: 150, height: 50 },
-            x: 50,
-            y: 200,
-            width: 150,
-            height: 50,
-            page: 1,
-            signerId: 'partner2'
-          }
-        ],
-        signers: [
-          {
-            id: 'partner1',
-            name: 'Alice Smith',
-            email: 'alice.smith@example.com',
-            role: 'Partner',
-            status: 'signed',
-            order: 1,
-            signedAt: new Date()
-          },
-          {
-            id: 'partner2',
-            name: 'Bob Johnson',
-            email: 'bob.johnson@example.com',
-            role: 'Partner',
-            status: 'pending',
-            order: 2
-          }
-        ],
-        signingOrder: 'sequential'
+        id: 'doc-2', title: 'NDA - Partnership with Innovatech', content: basePdf, status: 'sent',
+        createdAt: new Date('2026-01-05'), updatedAt: new Date('2026-01-10'), sentAt: new Date('2026-01-06'),
+        fields: [makeField('f4', 'signature', 'Company Rep', 's3'), makeField('f5', 'signature', 'Partner Rep', 's4')],
+        signers: [makeSigner('s3', 'Robert Wilson', 'robert@company.com', 'Company Rep', 1, 'signed', new Date('2026-01-08')), makeSigner('s4', 'Jennifer Lee', 'jen@innovatech.com', 'Partner', 2, 'pending')],
+        signingOrder: 'sequential', tags: ['nda', 'partnership'], folder: 'Legal', priority: 'high',
+        expiresAt: new Date('2026-02-28'),
+        audit: { views: 8, downloads: 1, ipAddresses: [] }
+      },
+      {
+        id: 'doc-3', title: 'Vendor Service Contract - Q1 2026', content: basePdf, status: 'draft',
+        createdAt: new Date('2026-02-01'), updatedAt: new Date('2026-02-10'),
+        fields: [makeField('f6', 'text', 'Vendor Name'), makeField('f7', 'text', 'Service Description'), makeField('f8', 'signature', 'Client Signature')],
+        signers: [], signingOrder: 'parallel', tags: ['vendor', 'contract'], folder: 'Procurement', priority: 'normal',
+        audit: { views: 3, downloads: 0, ipAddresses: [] }
+      },
+      {
+        id: 'doc-4', title: 'Lease Agreement - 123 Main Street', content: basePdf, status: 'in-progress',
+        createdAt: new Date('2026-01-15'), updatedAt: new Date('2026-02-05'), sentAt: new Date('2026-01-16'),
+        fields: [makeField('f9', 'signature', 'Tenant Signature', 's5'), makeField('f10', 'signature', 'Landlord Signature', 's6'), makeField('f11', 'date', 'Move-in Date', 's5')],
+        signers: [makeSigner('s5', 'Emily Rodriguez', 'emily@tenant.com', 'Tenant', 1, 'signed', new Date('2026-01-25')), makeSigner('s6', 'James Mitchell', 'james@property.com', 'Landlord', 2, 'pending')],
+        signingOrder: 'sequential', tags: ['lease', 'real-estate'], folder: 'Real Estate', priority: 'normal',
+        audit: { views: 15, downloads: 2, ipAddresses: ['10.0.0.1'] }
+      },
+      {
+        id: 'doc-5', title: 'Sales Agreement - Enterprise License', content: basePdf, status: 'completed',
+        createdAt: new Date('2025-11-20'), updatedAt: new Date('2025-12-01'), completedAt: new Date('2025-12-01'), sentAt: new Date('2025-11-21'),
+        fields: [makeField('f12', 'signature', 'Buyer Signature', 's7'), makeField('f13', 'text', 'Purchase Amount', 's7'), makeField('f14', 'signature', 'Seller Signature', 's8')],
+        signers: [makeSigner('s7', 'Alex Turner', 'alex@buyer.com', 'Buyer', 1, 'signed', new Date('2025-11-28')), makeSigner('s8', 'Michelle Wang', 'michelle@seller.com', 'Seller', 2, 'signed', new Date('2025-12-01'))],
+        signingOrder: 'sequential', tags: ['sales', 'enterprise'], folder: 'Sales', priority: 'high',
+        audit: { views: 20, downloads: 5, ipAddresses: ['172.16.0.1'] }
+      },
+      {
+        id: 'doc-6', title: 'Consulting Agreement - MarketPro', content: basePdf, status: 'sent',
+        createdAt: new Date('2026-01-20'), updatedAt: new Date('2026-02-01'), sentAt: new Date('2026-01-21'),
+        fields: [makeField('f15', 'signature', 'Consultant Signature', 's9'), makeField('f16', 'text', 'Scope of Work', 's9')],
+        signers: [makeSigner('s9', 'Carlos Martinez', 'carlos@consultant.com', 'Consultant', 1, 'pending'), makeSigner('s10', 'Lisa Anderson', 'lisa@marketpro.com', 'Client', 2, 'pending')],
+        signingOrder: 'parallel', tags: ['consulting', 'services'], folder: 'Consulting', priority: 'normal',
+        expiresAt: new Date('2026-03-15'),
+        audit: { views: 5, downloads: 0, ipAddresses: [] }
+      },
+      {
+        id: 'doc-7', title: 'Board Resolution - Annual Meeting', content: basePdf, status: 'declined',
+        createdAt: new Date('2025-10-15'), updatedAt: new Date('2025-11-01'), sentAt: new Date('2025-10-16'),
+        fields: [makeField('f17', 'signature', 'Chairman Signature', 's11'), makeField('f18', 'signature', 'Secretary Signature', 's12')],
+        signers: [makeSigner('s11', 'Thomas Blake', 'thomas@board.com', 'Chairman', 1, 'signed', new Date('2025-10-20')), makeSigner('s12', 'Patricia Hayes', 'patricia@board.com', 'Secretary', 2, 'declined')],
+        signingOrder: 'sequential', tags: ['governance', 'board'], folder: 'Governance', priority: 'urgent',
+        audit: { views: 30, downloads: 4, ipAddresses: ['10.10.10.1'] }
+      },
+      {
+        id: 'doc-8', title: 'Freelancer Contract - Design Work', content: basePdf, status: 'expired',
+        createdAt: new Date('2025-09-01'), updatedAt: new Date('2025-10-01'), sentAt: new Date('2025-09-02'),
+        expiresAt: new Date('2025-10-01'),
+        fields: [makeField('f19', 'signature', 'Freelancer Signature', 's13'), makeField('f20', 'text', 'Project Name', 's13')],
+        signers: [makeSigner('s13', 'Nina Patel', 'nina@design.com', 'Freelancer', 1, 'pending')],
+        signingOrder: 'sequential', tags: ['freelance', 'design'], folder: 'Contractors', priority: 'low',
+        audit: { views: 7, downloads: 1, ipAddresses: [] }
+      },
+      {
+        id: 'doc-9', title: 'Insurance Policy Renewal', content: basePdf, status: 'draft',
+        createdAt: new Date('2026-02-10'), updatedAt: new Date('2026-02-14'),
+        fields: [makeField('f21', 'text', 'Policy Number'), makeField('f22', 'checkbox', 'Agree to Terms'), makeField('f23', 'signature', 'Policyholder Signature')],
+        signers: [], signingOrder: 'sequential', tags: ['insurance', 'renewal'], folder: 'Insurance', priority: 'normal',
+        audit: { views: 2, downloads: 0, ipAddresses: [] }
+      },
+      {
+        id: 'doc-10', title: 'Intellectual Property Assignment', content: basePdf, status: 'voided',
+        createdAt: new Date('2025-08-15'), updatedAt: new Date('2025-09-10'), sentAt: new Date('2025-08-16'),
+        fields: [makeField('f24', 'signature', 'Assignor Signature', 's14'), makeField('f25', 'signature', 'Assignee Signature', 's15')],
+        signers: [makeSigner('s14', 'Kevin O\'Brien', 'kevin@inventor.com', 'Assignor', 1, 'signed', new Date('2025-08-25')), makeSigner('s15', 'Rachel Kim', 'rachel@company.com', 'Assignee', 2, 'pending')],
+        signingOrder: 'sequential', tags: ['ip', 'legal'], folder: 'Legal', priority: 'high',
+        audit: { views: 18, downloads: 3, ipAddresses: ['192.168.0.50'] }
       },
     ];
     setDocuments(initialDocuments);
 
-    // Demo templates
     const initialTemplates: Template[] = [
-      {
-        id: 'template1',
-        name: 'Standard NDA',
-        description: 'Non-disclosure agreement template',
-        category: 'Legal',
-        fields: [
-          {
-            id: 'field1',
-            type: 'text',
-            label: 'Company Name',
-            required: true,
-            position: { x: 100, y: 200 },
-            size: { width: 200, height: 30 },
-            x: 100,
-            y: 200,
-            width: 200,
-            height: 30,
-            page: 1
-          }
-        ],
-        usageCount: 5,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
+      { id: 'tpl-1', name: 'Standard NDA', description: 'Non-disclosure agreement template', category: 'Legal', fields: [makeField('tf1', 'text', 'Company Name'), makeField('tf2', 'signature', 'Party A Signature'), makeField('tf3', 'signature', 'Party B Signature')], usageCount: 15, createdAt: new Date('2025-06-01'), updatedAt: new Date('2025-12-01'), tags: ['nda', 'legal'] },
+      { id: 'tpl-2', name: 'Employment Agreement', description: 'Standard employment contract', category: 'HR', fields: [makeField('tf4', 'text', 'Employee Name'), makeField('tf5', 'text', 'Position'), makeField('tf6', 'signature', 'Employee Signature')], usageCount: 22, createdAt: new Date('2025-05-15'), updatedAt: new Date('2025-11-20'), tags: ['employment', 'hr'] },
+      { id: 'tpl-3', name: 'Service Agreement', description: 'Professional services contract', category: 'Business', fields: [makeField('tf7', 'text', 'Service Description'), makeField('tf8', 'text', 'Fee Amount'), makeField('tf9', 'signature', 'Client Signature')], usageCount: 8, createdAt: new Date('2025-07-10'), updatedAt: new Date('2025-10-15'), tags: ['service', 'contract'] },
+      { id: 'tpl-4', name: 'Lease Agreement', description: 'Property rental contract', category: 'Real Estate', fields: [makeField('tf10', 'text', 'Property Address'), makeField('tf11', 'date', 'Lease Start'), makeField('tf12', 'signature', 'Tenant Signature')], usageCount: 12, createdAt: new Date('2025-04-20'), updatedAt: new Date('2025-09-30'), tags: ['lease', 'property'] },
+      { id: 'tpl-5', name: 'Purchase Order', description: 'Standard purchase order form', category: 'Finance', fields: [makeField('tf13', 'text', 'Item Description'), makeField('tf14', 'text', 'Quantity'), makeField('tf15', 'signature', 'Approver Signature')], usageCount: 30, createdAt: new Date('2025-03-01'), updatedAt: new Date('2025-08-15'), tags: ['purchase', 'finance'] },
+      { id: 'tpl-6', name: 'Contractor Agreement', description: 'Independent contractor contract', category: 'HR', fields: [makeField('tf16', 'text', 'Contractor Name'), makeField('tf17', 'text', 'Project Scope'), makeField('tf18', 'signature', 'Contractor Signature')], usageCount: 6, createdAt: new Date('2025-08-01'), updatedAt: new Date('2025-12-10'), tags: ['contractor', 'freelance'] },
+      { id: 'tpl-7', name: 'Partnership Agreement', description: 'Business partnership terms', category: 'Legal', fields: [makeField('tf19', 'text', 'Partner A Name'), makeField('tf20', 'text', 'Partner B Name'), makeField('tf21', 'signature', 'Partner A Signature')], usageCount: 4, createdAt: new Date('2025-06-15'), updatedAt: new Date('2025-11-05'), tags: ['partnership', 'legal'] },
+      { id: 'tpl-8', name: 'Release of Liability', description: 'Liability waiver form', category: 'Legal', fields: [makeField('tf22', 'text', 'Participant Name'), makeField('tf23', 'checkbox', 'Acknowledge Risk'), makeField('tf24', 'signature', 'Participant Signature')], usageCount: 18, createdAt: new Date('2025-02-10'), updatedAt: new Date('2025-07-20'), tags: ['waiver', 'liability'] },
+      { id: 'tpl-9', name: 'Invoice Template', description: 'Standard invoice for billing', category: 'Finance', fields: [makeField('tf25', 'text', 'Client Name'), makeField('tf26', 'text', 'Amount Due'), makeField('tf27', 'date', 'Due Date')], usageCount: 45, createdAt: new Date('2025-01-05'), updatedAt: new Date('2025-12-20'), tags: ['invoice', 'billing'] },
+      { id: 'tpl-10', name: 'Offer Letter', description: 'Job offer letter template', category: 'HR', fields: [makeField('tf28', 'text', 'Candidate Name'), makeField('tf29', 'text', 'Salary'), makeField('tf30', 'signature', 'HR Signature')], usageCount: 10, createdAt: new Date('2025-04-01'), updatedAt: new Date('2025-10-25'), tags: ['offer', 'hiring'] },
     ];
     setTemplates(initialTemplates);
+
+    const initialNotifications: Notification[] = [
+      { id: 'n1', type: 'signed', title: 'Document Signed', message: 'Sarah Chen signed Employment Agreement', documentId: 'doc-1', signerId: 's1', createdAt: new Date('2025-12-10'), read: false, status: 'sent' },
+      { id: 'n2', type: 'completed', title: 'Document Completed', message: 'Employment Agreement fully executed', documentId: 'doc-1', createdAt: new Date('2025-12-15'), read: false, status: 'sent' },
+      { id: 'n3', type: 'reminder', title: 'Reminder Sent', message: 'Reminder sent to Jennifer Lee for NDA', documentId: 'doc-2', signerId: 's4', createdAt: new Date('2026-01-15'), read: false, status: 'sent' },
+      { id: 'n4', type: 'signed', title: 'Document Signed', message: 'Emily Rodriguez signed Lease Agreement', documentId: 'doc-4', signerId: 's5', createdAt: new Date('2026-01-25'), read: true, status: 'sent' },
+      { id: 'n5', type: 'completed', title: 'Sale Completed', message: 'Sales Agreement fully signed by all parties', documentId: 'doc-5', createdAt: new Date('2025-12-01'), read: true, status: 'sent' },
+      { id: 'n6', type: 'declined', title: 'Document Declined', message: 'Patricia Hayes declined Board Resolution', documentId: 'doc-7', signerId: 's12', createdAt: new Date('2025-11-01'), read: true, status: 'sent' },
+      { id: 'n7', type: 'expired', title: 'Document Expired', message: 'Freelancer Contract has expired', documentId: 'doc-8', createdAt: new Date('2025-10-01'), read: false, status: 'sent' },
+      { id: 'n8', type: 'reminder', title: 'Pending Signature', message: 'Carlos Martinez has not signed Consulting Agreement', documentId: 'doc-6', signerId: 's9', createdAt: new Date('2026-02-01'), read: false, status: 'sent' },
+      { id: 'n9', type: 'signed', title: 'Document Signed', message: 'Robert Wilson signed NDA - Partnership', documentId: 'doc-2', signerId: 's3', createdAt: new Date('2026-01-08'), read: true, status: 'sent' },
+      { id: 'n10', type: 'reminder', title: 'Action Required', message: 'James Mitchell needs to sign Lease Agreement', documentId: 'doc-4', signerId: 's6', createdAt: new Date('2026-02-10'), read: false, status: 'pending' },
+    ];
+    setNotifications(initialNotifications);
   }, []);
 
   const getDocumentStats = (): DocumentStats => {
