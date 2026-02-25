@@ -171,11 +171,11 @@ const Dashboard = () => {
           <div className="flex flex-wrap gap-2">
             <Button 
               variant="outline" 
-              onClick={() => window.open('https://skillsim.vercel.app/dashboard', '_self')}
+              onClick={() => window.open('https://careertodo.com/practice-lab', '_self')}
               className="bg-gradient-to-r from-primary to-accent text-primary-foreground border-0"
             >
               <ExternalLink className="h-4 w-4 mr-2" />
-              Master Dashboard
+              Lab Dashboard
             </Button>
             <Button variant="outline" onClick={handleViewTemplates}>
               <Archive className="h-4 w-4 mr-2" />
