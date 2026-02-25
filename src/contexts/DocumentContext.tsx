@@ -269,8 +269,9 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         {
           id: 'doc-3', title: 'Vendor Service Contract - Q1 2026', content: pdfContents['doc-3'], status: 'draft',
           createdAt: new Date('2026-02-01'), updatedAt: new Date('2026-02-10'),
-          fields: [makeField('f6', 'text', 'Vendor Name'), makeField('f7', 'text', 'Service Description'), makeField('f8', 'signature', 'Client Signature')],
-          signers: [], signingOrder: 'parallel', tags: ['vendor', 'contract'], folder: 'Procurement', priority: 'normal',
+          fields: [makeField('f6', 'text', 'Vendor Name', 's16'), makeField('f7', 'text', 'Service Description', 's16'), makeField('f8', 'signature', 'Client Signature', 's17')],
+          signers: [makeSigner('s16', 'Michael Torres', 'michael@vendorcorp.com', 'Vendor Rep', 1, 'pending'), makeSigner('s17', 'Angela Foster', 'angela@clientco.com', 'Client Manager', 2, 'pending')],
+          signingOrder: 'parallel', tags: ['vendor', 'contract'], folder: 'Procurement', priority: 'normal',
           audit: { views: 3, downloads: 0, ipAddresses: [] }
         },
         {
@@ -318,8 +319,9 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         {
           id: 'doc-9', title: 'Insurance Policy Renewal', content: pdfContents['doc-9'], status: 'draft',
           createdAt: new Date('2026-02-10'), updatedAt: new Date('2026-02-14'),
-          fields: [makeField('f21', 'text', 'Policy Number'), makeField('f22', 'checkbox', 'Agree to Terms'), makeField('f23', 'signature', 'Policyholder Signature')],
-          signers: [], signingOrder: 'sequential', tags: ['insurance', 'renewal'], folder: 'Insurance', priority: 'normal',
+          fields: [makeField('f21', 'text', 'Policy Number', 's18'), makeField('f22', 'checkbox', 'Agree to Terms', 's18'), makeField('f23', 'signature', 'Policyholder Signature', 's18'), makeField('f24b', 'signature', 'Agent Signature', 's19')],
+          signers: [makeSigner('s18', 'Daniel Cooper', 'daniel@insured.com', 'Policyholder', 1, 'pending'), makeSigner('s19', 'Samantha Reed', 'samantha@insureagency.com', 'Insurance Agent', 2, 'pending')],
+          signingOrder: 'sequential', tags: ['insurance', 'renewal'], folder: 'Insurance', priority: 'normal',
           audit: { views: 2, downloads: 0, ipAddresses: [] }
         },
         {
